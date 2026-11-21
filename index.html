@@ -27,7 +27,25 @@
       padding: max(16px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
     }
     .container { max-width: 1160px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+
+    /* 左上角即時時間、定位與快取狀態列 */
+    .live-meta-row {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+      font-size: 12px; color: var(--muted);
+    }
+    .meta-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(30, 41, 59, 0.9); border: 1px solid var(--border);
+      padding: 3px 9px; border-radius: 999px; color: #cbd5e1;
+      font-variant-numeric: tabular-nums;
+    }
+    .meta-pill.loc-pill { cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+    .meta-pill.loc-pill:hover { border-color: var(--blue); color: var(--blue); }
+    .sync-pill { cursor: pointer; transition: all 0.2s; }
+    .sync-pill.cached { border-color: rgba(251, 191, 36, 0.5); color: #fcd34d; }
+    .sync-pill.live { border-color: rgba(16, 185, 129, 0.45); color: #6ee7b7; }
+
     .btn {
       background: var(--accent); color: #052e16; border: none; padding: 9px 14px;
       border-radius: 9px; font-weight: 600; cursor: pointer; font-size: 13px;
@@ -55,13 +73,21 @@
 
     /* KPI 卡片網格 */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .strategy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 12px; margin-bottom: 14px; }
     .card { background: var(--card); padding: 16px 18px; border-radius: 13px; border: 1px solid var(--border); margin-bottom: 14px; }
     .kpi-card { margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; }
-    .card-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    .card-value { font-size: 24px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
-    .card-sub { font-size: 12px; color: var(--muted); margin-top: 7px; }
-    .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 8px; overflow: hidden; display: flex; }
-    .progress-fill { height: 100%; background: var(--accent); transition: width 0.35s ease; }
+    .card-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .card-value { font-size: 24px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+    .card-sub { font-size: 12px; color: var(--muted); margin-top: 7px; line-height: 1.4; }
+    .progress-bg { width: 100%; height: 7px; background: var(--input); border-radius: 999px; margin-top: 8px; overflow: hidden; display: flex; position: relative; }
+    .progress-fill { height: 100%; background: var(--accent); transition: width 0.35s ease; border-radius: 999px; }
+    .pace-tick { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(248, 250, 252, 0.75); z-index: 2; }
+
+    /* 紅綠燈狀態標籤 */
+    .tl-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .tl-green { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .tl-yellow { background: rgba(251, 191, 36, 0.18); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.35); }
+    .tl-red { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
 
     /* 營養素比例條 */
     .macro-bar { height: 10px; border-radius: 999px; overflow: hidden; display: flex; background: var(--input); margin: 10px 0 8px; }
@@ -89,6 +115,7 @@
       .chart-stage { height: 250px; }
       .chart-tabs { width: 100%; justify-content: space-between; }
       .chart-tab { flex: 1; text-align: center; padding: 6px 6px; font-size: 11px; }
+      .strategy-grid { grid-template-columns: 1fr; }
     }
 
     /* 表單通用 */
@@ -170,7 +197,7 @@
     <!-- 登入畫面 -->
     <div id="login-screen" class="card">
       <h2 style="margin-top:0;">🔒 私人減肥與餐飲理財 Dashboard</h2>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">已綁定「2026 減肥 Daily Log」（支援智能讀寫、體重追蹤與一鍵翻兜）</p>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">已綁定「2026 減肥 Daily Log」（支援 0.01s 快取秒開、週間熱量池與預算封頂）</p>
       <button class="btn" style="width:100%; padding:13px; font-size:15px;" onclick="handleAuthClick()">使用 Google 帳號登入</button>
     </div>
 
@@ -179,11 +206,15 @@
       <div class="header">
         <div>
           <h2 style="margin:0; font-size:20px;">📊 2026 減肥與開支追蹤</h2>
-          <span style="font-size:12px; color:var(--muted);" id="last-updated">資料同步中...</span>
+          <div class="live-meta-row">
+            <span class="meta-pill" id="live-datetime">🕒 載入時間中...</span>
+            <span class="meta-pill loc-pill" id="live-location" onclick="requestPreciseLocation(true)" title="點擊更新精準地區定位">📍 香港</span>
+            <span class="meta-pill sync-pill" id="sync-status-pill" onclick="manualSync()" title="點擊立即與 Google Sheet 同步">⚡ 準備中...</span>
+          </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-outline" id="toggle-add-btn" onclick="toggleAddForm()">✍️ 手動新增飲食</button>
-          <button class="btn" onclick="fetchSheetData()">🔄 同步</button>
+          <button class="btn" onclick="manualSync()">🔄 同步</button>
           <button class="btn btn-outline" onclick="handleSignoutClick()">登出</button>
         </div>
       </div>
@@ -200,7 +231,7 @@
         <div style="font-size:12px; color:var(--muted);">💡 點擊下方圖表任一日即可切換檢視</div>
       </div>
 
-      <!-- 5 張核心 KPI 卡片 -->
+      <!-- 5 張核心當日 KPI 卡片 -->
       <div class="kpi-grid">
         <div class="card kpi-card">
           <div>
@@ -240,11 +271,55 @@
 
         <div class="card kpi-card">
           <div>
-            <div class="card-title"><span>💰 當日 / 累積餐費</span><span>HKD</span></div>
+            <div class="card-title"><span>💰 當日餐費</span><span>HKD</span></div>
             <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
-            <div style="height:6px; margin-top:8px;"></div>
+            <div style="height:7px; margin-top:8px;"></div>
           </div>
-          <div class="card-sub" id="sub-cost">累積：$0｜日均：$0</div>
+          <div class="card-sub" id="sub-cost">總累積：$0｜日均：$0</div>
+        </div>
+      </div>
+
+      <!-- 雙核戰略管控卡：本週熱量儲蓄池 + 每月餐費預算封頂（紅綠燈） -->
+      <div class="strategy-grid">
+        <!-- 本週熱量儲蓄池 -->
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title">
+              <span>🏦 本週熱量儲蓄池 (<span id="week-range-label">週一至週日</span>)</span>
+              <span id="week-bank-badge" class="tl-badge tl-green">計算中</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+              <div class="card-value" style="font-size:21px;" id="week-cal-val">0 / 14,000 kcal</div>
+              <span style="font-size:12px; color:var(--muted);" id="week-logged-days">已記 0/7 日</span>
+            </div>
+            <div class="progress-bg" title="白色刻度為已記日數對應嘅標準進度">
+              <div class="progress-fill" id="bar-week-cal" style="width:0%;"></div>
+              <div class="pace-tick" id="tick-week-pace" style="left:0%;"></div>
+            </div>
+          </div>
+          <div class="card-sub" id="sub-week-bank">-</div>
+        </div>
+
+        <!-- 每月餐費預算封頂 -->
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title">
+              <span>🚦 <span id="month-label">本月</span>餐費預算封頂</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="budget-tl-badge" class="tl-badge tl-green">🟢 進度健康</span>
+                <button class="btn btn-outline btn-sm" style="padding:2px 7px; font-size:11px;" onclick="editMonthlyBudget()">⚙️ 改上限</button>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+              <div class="card-value" style="font-size:21px; color:var(--warn);" id="month-cost-val">$0 / $4,500</div>
+              <span style="font-size:12px; color:var(--muted);" id="month-pct-label">0%</span>
+            </div>
+            <div class="progress-bg" title="白色刻度為本月日曆時間進度">
+              <div class="progress-fill" id="bar-month-budget" style="width:0%;"></div>
+              <div class="pace-tick" id="tick-month-pace" style="left:0%;"></div>
+            </div>
+          </div>
+          <div class="card-sub" id="sub-month-budget">-</div>
         </div>
       </div>
 
@@ -324,7 +399,7 @@
         </form>
       </div>
 
-      <!-- 4 視角專業互動圖表區（連續日曆軸 + 十字準星 + 全景 Tooltip） -->
+      <!-- 4 視角專業互動圖表區 -->
       <div class="card">
         <div class="section-header" style="margin-bottom: 10px;">
           <div class="chart-tabs">
@@ -349,7 +424,7 @@
         </div>
       </div>
 
-      <!-- 飲食明細（桌面 Table + 手機 Card + 搜尋 + 當日聚焦 + 一鍵翻兜） -->
+      <!-- 飲食明細 -->
       <div class="card">
         <div class="section-header">
           <h3 style="margin:0; font-size:16px;">🍽️ 飲食明細記錄 <span id="filter-count" style="font-size:12px; color:var(--muted); font-weight:400;"></span></h3>
@@ -455,6 +530,7 @@
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
     const TARGET_CAL = 2000;
+    const WEEKLY_CAL_TARGET = TARGET_CAL * 7; // 14,000 kcal 週間儲蓄池
     const TARGET_PRO = 140;
     const TARGET_STEPS = 9000;
 
@@ -463,17 +539,129 @@
 
     const TOKEN_STORAGE_KEY = 'fit_dash_rw_token';
     const EXPIRY_STORAGE_KEY = 'fit_dash_rw_expiry';
+    const LOC_CACHE_KEY = 'fit_dash_loc_label';
+    const DATA_CACHE_KEY = 'fit_dash_rows_cache_v1';
+    const DATA_CACHE_TIME_KEY = 'fit_dash_rows_cache_time_v1';
+    const BUDGET_CAP_KEY = 'fit_dash_monthly_budget';
 
     let tokenClient = null;
     let accessToken = null;
+    let pendingAuthResolve = null;
+    let pendingAuthReject = null;
+
     let chartInstance = null;
     let dailyLogSheetId = null;
     let allParsedRows = [];
     let selectedViewDate = '';
     let chartRangeDays = 14;
-    let chartMode = 'cal'; // 'cal' | 'weight' | 'steps' | 'cost'
+    let chartMode = 'cal';
     let dateSortDesc = true;
     let currentTimelineDates = [];
+    let monthlyBudgetCap = Number(localStorage.getItem(BUDGET_CAP_KEY)) || 4500;
+
+    // 左上角每秒更新即時日期與時鐘
+    function startLiveClock() {
+      const el = document.getElementById('live-datetime');
+      const tick = () => {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const wk = WEEKDAYS_HK[now.getDay()];
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        el.innerText = `🕒 ${yyyy}-${mm}-${dd} (${wk}) ${hh}:${min}:${ss}`;
+      };
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    // 智能地區顯示
+    function initLocationDisplay() {
+      const locEl = document.getElementById('live-location');
+      const cached = localStorage.getItem(LOC_CACHE_KEY);
+      if (cached) {
+        locEl.innerText = `📍 ${cached}`;
+      } else {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const tzMap = { 'Asia/Hong_Kong': '香港', 'Asia/Tokyo': '日本', 'Asia/Seoul': '首爾', 'Asia/Shanghai': '中國內地', 'Asia/Singapore': '新加坡' };
+        locEl.innerText = `📍 ${tzMap[tz] || tz.split('/').pop() || '香港'}`;
+      }
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(res => {
+          if (res.state === 'granted') requestPreciseLocation(false);
+        }).catch(() => {});
+      }
+    }
+
+    function requestPreciseLocation(showFeedback = false) {
+      const locEl = document.getElementById('live-location');
+      if (!navigator.geolocation) {
+        if (showFeedback) showToast('此瀏覽器不支援定位功能', true);
+        return;
+      }
+      if (showFeedback) locEl.innerText = '📍 定位中...';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&accept-language=zh-HK`);
+          const data = await res.json();
+          const addr = data.address || {};
+          const district = addr.suburb || addr.borough || addr.town || addr.city_district || addr.county || '';
+          const city = addr.city || addr.state || addr.country || '香港';
+          const cleanCity = city.replace('特別行政區', '');
+          const label = district && district !== cleanCity ? `${district} · ${cleanCity}` : cleanCity;
+          localStorage.setItem(LOC_CACHE_KEY, label);
+          locEl.innerText = `📍 ${label}`;
+          if (showFeedback) showToast(`📍 已更新位置：${label}`);
+        } catch (e) {
+          locEl.innerText = '📍 香港';
+        }
+      }, () => {
+        const fallback = localStorage.getItem(LOC_CACHE_KEY) || '香港';
+        locEl.innerText = `📍 ${fallback}`;
+        if (showFeedback) showToast('未獲定位權限，維持顯示預設地區', true);
+      }, { timeout: 6000, maximumAge: 600000 });
+    }
+
+    // 自訂每月餐飲預算上限
+    function editMonthlyBudget() {
+      const input = prompt('請輸入每月餐飲預算封頂金額 (HKD)：', String(monthlyBudgetCap));
+      if (input === null) return;
+      const val = Math.round(Number(input));
+      if (!val || val < 500) {
+        showToast('請輸入有效金額（最少 $500）', true);
+        return;
+      }
+      monthlyBudgetCap = val;
+      localStorage.setItem(BUDGET_CAP_KEY, String(val));
+      renderAll();
+      showToast(`🚦 每月餐費預算已設為 $${val.toLocaleString()}`);
+    }
+
+    function setSyncPill(mode, text) {
+      const pill = document.getElementById('sync-status-pill');
+      pill.classList.remove('cached', 'live');
+      if (mode === 'cached') pill.classList.add('cached');
+      if (mode === 'live') pill.classList.add('live');
+      pill.innerText = text;
+    }
+
+    function isTokenValid() {
+      const exp = Number(localStorage.getItem(EXPIRY_STORAGE_KEY) || 0);
+      return Boolean(accessToken && Date.now() < exp);
+    }
+
+    // 當 Token 過期而用家點擊同步或寫入時，無縫彈窗續期並自動繼續動作
+    function ensureValidToken() {
+      if (isTokenValid()) return Promise.resolve(accessToken);
+      return new Promise((resolve, reject) => {
+        pendingAuthResolve = resolve;
+        pendingAuthReject = reject;
+        tokenClient.requestAccessToken({ prompt: '' });
+      });
+    }
 
     function getTodayISO() {
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
@@ -485,6 +673,17 @@
       d.setDate(d.getDate() + delta);
       const tzOffset = d.getTimezoneOffset() * 60000;
       return (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10);
+    }
+
+    // 取得指定日期所屬星期嘅週一至週日（7 日陣列）
+    function getWeekDatesMondayToSunday(isoDate) {
+      const d = new Date(isoDate + 'T00:00:00');
+      const day = d.getDay(); // 0=週日, 1=週一 ... 6=週六
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const mondayISO = addDaysISO(isoDate, diffToMonday);
+      const list = [];
+      for (let i = 0; i < 7; i++) list.push(addDaysISO(mondayISO, i));
+      return list;
     }
 
     function formatShortDateLabel(isoDate) {
@@ -523,7 +722,6 @@
       toastTimer = setTimeout(() => el.classList.add('hidden'), 3200);
     }
 
-    // TradingView 式十字準星與所選日期高亮底色帶 Plugin
     const crosshairAndHighlightPlugin = {
       id: 'crosshairAndHighlight',
       beforeDatasetsDraw(chart) {
@@ -562,16 +760,57 @@
       }
     };
 
-    function showDashboard() {
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('dashboard').classList.remove('hidden');
-      fetchSheetData();
+    // 將原始二維陣列轉換為結構化紀錄並刷新畫面
+    function applyRawSheetRows(rawRows, adjustInitialDate = false) {
+      allParsedRows = [];
+      rawRows.forEach((r, idx) => {
+        if (r && r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && (r[2] || r[8] || r[10])) {
+          const food = String(r[2] || '');
+          const cal = parseNum(r[3]);
+          const cost = parseNum(r[7]);
+          const isMetricOnly = (food.includes('步數') || food.includes('體重') || food === '') && cal === 0 && cost === 0;
+          allParsedRows.push({
+            rowNum: 4 + idx,
+            date: String(r[0]).trim(),
+            meal: String(r[1] || ''),
+            food: food || '📊 步數/體重記錄',
+            cal: cal,
+            pro: parseNum(r[4]),
+            carb: parseNum(r[5]),
+            fat: parseNum(r[6]),
+            cost: cost,
+            steps: Math.round(parseNum(r[8])),
+            remarks: String(r[9] || ''),
+            weight: parseNum(r[10]),
+            isStepOnly: isMetricOnly
+          });
+        }
+      });
+
+      if (adjustInitialDate) {
+        const dates = [...new Set(allParsedRows.map(r => r.date))].sort();
+        if (dates.length > 0 && !dates.includes(selectedViewDate) && selectedViewDate === getTodayISO()) {
+          selectedViewDate = dates[dates.length - 1];
+          document.getElementById('view-date-picker').value = selectedViewDate;
+          document.getElementById('qm-date').value = selectedViewDate;
+          document.getElementById('only-date-txt').innerText = selectedViewDate;
+        }
+      }
+      renderAll();
     }
 
-    function showLogin() {
+    function enterDashboardUI() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+    }
+
+    function showLoginAndWipeCache() {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(EXPIRY_STORAGE_KEY);
+      localStorage.removeItem(DATA_CACHE_KEY);
+      localStorage.removeItem(DATA_CACHE_TIME_KEY);
       accessToken = null;
+      allParsedRows = [];
       document.getElementById('dashboard').classList.add('hidden');
       document.getElementById('login-screen').classList.remove('hidden');
     }
@@ -588,6 +827,9 @@
     }
 
     window.onload = () => {
+      startLiveClock();
+      initLocationDisplay();
+
       const todayISO = getTodayISO();
       selectedViewDate = todayISO;
       document.getElementById('f-date').value = todayISO;
@@ -604,16 +846,57 @@
             const expiresInMs = ((tokenResponse.expires_in || 3600) - 60) * 1000;
             localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
             localStorage.setItem(EXPIRY_STORAGE_KEY, String(Date.now() + expiresInMs));
-            showDashboard();
+            if (pendingAuthResolve) {
+              const resFn = pendingAuthResolve;
+              pendingAuthResolve = null; pendingAuthReject = null;
+              resFn(accessToken);
+            } else {
+              enterDashboardUI();
+              fetchSheetData(false);
+            }
+          } else if (pendingAuthReject) {
+            const rejFn = pendingAuthReject;
+            pendingAuthResolve = null; pendingAuthReject = null;
+            rejFn(new Error('未完成授權'));
           }
         },
+        error_callback: (err) => {
+          if (pendingAuthReject) {
+            const rejFn = pendingAuthReject;
+            pendingAuthResolve = null; pendingAuthReject = null;
+            rejFn(new Error(err.message || '授權視窗已關閉'));
+          }
+        }
       });
 
       const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
       const savedExpiry = Number(localStorage.getItem(EXPIRY_STORAGE_KEY) || 0);
-      if (savedToken && Date.now() < savedExpiry) {
-        accessToken = savedToken;
-        showDashboard();
+      const tokenAlive = Boolean(savedToken && Date.now() < savedExpiry);
+      if (tokenAlive) accessToken = savedToken;
+
+      // 0.01 秒快取秒開引擎：只要有本地快取，即刻渲染畫面免等待
+      const cachedJSON = localStorage.getItem(DATA_CACHE_KEY);
+      const cachedTime = localStorage.getItem(DATA_CACHE_TIME_KEY) || '';
+      if (cachedJSON) {
+        try {
+          const cachedRows = JSON.parse(cachedJSON);
+          enterDashboardUI();
+          applyRawSheetRows(cachedRows, true);
+          if (tokenAlive) {
+            setSyncPill('cached', `⚡ 秒開快取 · 背景同步中...`);
+            fetchSheetData(true);
+          } else {
+            setSyncPill('cached', `⚡ 快取模式 (${cachedTime || '點此連線更新'})`);
+          }
+          return;
+        } catch (e) {
+          console.warn('快取解析失敗，重新拉取', e);
+        }
+      }
+
+      if (tokenAlive) {
+        enterDashboardUI();
+        fetchSheetData(false);
       }
     };
 
@@ -621,12 +904,25 @@
       tokenClient.requestAccessToken({ prompt: '' });
     }
 
+    async function manualSync() {
+      try {
+        setSyncPill('cached', '🔄 同步中...');
+        await ensureValidToken();
+        await fetchSheetData(false);
+        showToast('✅ 已同步最新 Google Sheet 資料');
+      } catch (err) {
+        setSyncPill('cached', '⚡ 快取模式 (點擊重新連線)');
+        showToast('同步取消：' + err.message, true);
+      }
+    }
+
     function handleSignoutClick() {
       if (accessToken) google.accounts.oauth2.revoke(accessToken);
-      showLogin();
+      showLoginAndWipeCache();
     }
 
     async function appendRowToSheet(rowArray) {
+      await ensureValidToken();
       const range = encodeURIComponent("'Daily Log'!A4:K");
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
       const res = await fetch(url, {
@@ -634,13 +930,14 @@
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [rowArray] })
       });
-      if (res.status === 401) { showLogin(); throw new Error('登入已過期'); }
+      if (res.status === 401) { accessToken = null; throw new Error('授權過期，請再按一次'); }
       const data = await res.json();
       if (data.error) throw new Error(data.error.message);
       return data;
     }
 
     async function updateRowInSheet(rowNum, rowArray) {
+      await ensureValidToken();
       const range = encodeURIComponent(`'Daily Log'!A${rowNum}:K${rowNum}`);
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const res = await fetch(url, {
@@ -648,7 +945,7 @@
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [rowArray] })
       });
-      if (res.status === 401) { showLogin(); throw new Error('登入已過期'); }
+      if (res.status === 401) { accessToken = null; throw new Error('授權過期，請再按一次'); }
       const data = await res.json();
       if (data.error) throw new Error(data.error.message);
       return data;
@@ -670,6 +967,7 @@
       btn.innerText = '更新中...';
 
       try {
+        await ensureValidToken();
         const dayRows = allParsedRows.filter(r => r.date === dateVal);
         if (dayRows.length > 0) {
           const target = dayRows[dayRows.length - 1];
@@ -709,7 +1007,7 @@
         document.getElementById('view-date-picker').value = dateVal;
         document.getElementById('only-date-txt').innerText = dateVal;
         showToast('✅ 已智能同步步數 / 體重！');
-        await fetchSheetData();
+        await fetchSheetData(false);
       } catch (err) {
         showToast('更新失敗：' + err.message, true);
       } finally {
@@ -734,7 +1032,7 @@
         document.getElementById('view-date-picker').value = targetDate;
         document.getElementById('only-date-txt').innerText = targetDate;
         showToast(`✅ 已翻兜「${src.meal || '餐點'}」至今日！`);
-        await fetchSheetData();
+        await fetchSheetData(false);
       } catch (err) {
         showToast('複製失敗：' + err.message, true);
       }
@@ -765,7 +1063,7 @@
         ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-steps', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
         status.innerText = '';
         showToast('✅ 已寫入飲食記錄！');
-        await fetchSheetData();
+        await fetchSheetData(false);
       } catch (err) {
         status.innerText = '寫入失敗：' + err.message;
       } finally {
@@ -775,6 +1073,7 @@
 
     async function ensureSheetId() {
       if (dailyLogSheetId !== null) return dailyLogSheetId;
+      await ensureValidToken();
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       const data = await res.json();
@@ -783,54 +1082,35 @@
       return dailyLogSheetId;
     }
 
-    async function fetchSheetData() {
+    async function fetchSheetData(isSilentRevalidate = false) {
       if (!accessToken) return;
       try {
         const range = encodeURIComponent("'Daily Log'!A4:K");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (res.status === 401) { showLogin(); return; }
+        if (res.status === 401) {
+          accessToken = null;
+          setSyncPill('cached', '⚡ 快取模式 (點擊重新授權)');
+          return;
+        }
         const data = await res.json();
-        if (data.error) { showToast('讀取失敗：' + data.error.message, true); return; }
-
-        const rawRows = data.values || [];
-        allParsedRows = [];
-        rawRows.forEach((r, idx) => {
-          if (r && r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && (r[2] || r[8] || r[10])) {
-            const food = String(r[2] || '');
-            const cal = parseNum(r[3]);
-            const cost = parseNum(r[7]);
-            const isMetricOnly = (food.includes('步數') || food.includes('體重') || food === '') && cal === 0 && cost === 0;
-            allParsedRows.push({
-              rowNum: 4 + idx,
-              date: String(r[0]).trim(),
-              meal: String(r[1] || ''),
-              food: food || '📊 步數/體重記錄',
-              cal: cal,
-              pro: parseNum(r[4]),
-              carb: parseNum(r[5]),
-              fat: parseNum(r[6]),
-              cost: cost,
-              steps: Math.round(parseNum(r[8])),
-              remarks: String(r[9] || ''),
-              weight: parseNum(r[10]),
-              isStepOnly: isMetricOnly
-            });
-          }
-        });
-
-        const dates = [...new Set(allParsedRows.map(r => r.date))].sort();
-        if (dates.length > 0 && !dates.includes(selectedViewDate) && selectedViewDate === getTodayISO()) {
-          selectedViewDate = dates[dates.length - 1];
-          document.getElementById('view-date-picker').value = selectedViewDate;
-          document.getElementById('qm-date').value = selectedViewDate;
-          document.getElementById('only-date-txt').innerText = selectedViewDate;
+        if (data.error) {
+          if (!isSilentRevalidate) showToast('讀取失敗：' + data.error.message, true);
+          return;
         }
 
-        renderAll();
-        document.getElementById('last-updated').innerText = '最後同步：' + new Date().toLocaleTimeString();
+        const rawRows = data.values || [];
+        const timeStr = new Date().toLocaleTimeString('zh-HK', { hour12: false });
+        try {
+          localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(rawRows));
+          localStorage.setItem(DATA_CACHE_TIME_KEY, timeStr);
+        } catch (e) { console.warn('快取寫入略過', e); }
+
+        applyRawSheetRows(rawRows, !isSilentRevalidate && allParsedRows.length === 0);
+        setSyncPill('live', `✅ 已同步 ${timeStr}`);
       } catch (err) {
         console.error(err);
+        setSyncPill('cached', '⚡ 離線快取檢視中');
       }
     }
 
@@ -871,7 +1151,6 @@
       renderAll();
     }
 
-    // 建立連續不間斷日曆軸，解決漏記或單日數據變成「大磚頭」或斷層問題
     function buildContinuousTimeline(recordedDates) {
       const todayISO = getTodayISO();
       const maxRecorded = recordedDates.length > 0 ? recordedDates[recordedDates.length - 1] : todayISO;
@@ -892,7 +1171,6 @@
       }
 
       let startAnchor = recordedDates[0];
-      // 若「全部」模式下總跨度少於 7 日，自動向前補齊至最少 7 日，保持視覺比例優雅
       const minStart = addDaysISO(endAnchor, -6);
       if (startAnchor > minStart) startAnchor = minStart;
 
@@ -925,7 +1203,6 @@
 
       const allRecordedDates = Object.keys(dailyMap).sort();
 
-      // 計算有磅重日子嘅 7 次移動平均線
       const weightDates = allRecordedDates.filter(d => dailyMap[d].weight > 0);
       const weightMA7 = {};
       weightDates.forEach((d, idx) => {
@@ -936,7 +1213,7 @@
 
       const dStat = dailyMap[selectedViewDate] || { cal: 0, pro: 0, carb: 0, fat: 0, steps: 0, cost: 0, weight: 0 };
 
-      // 熱量 KPI
+      // 1. 當日熱量 KPI
       const kpiCalEl = document.getElementById('kpi-cal');
       const barCalEl = document.getElementById('bar-cal');
       kpiCalEl.innerText = `${Math.round(dStat.cal).toLocaleString()} kcal`;
@@ -947,19 +1224,19 @@
       document.getElementById('sub-cal').innerText = calDiff >= 0 ? `剩餘額度：${calDiff.toLocaleString()} kcal` : `⚠️ 超標 ${Math.abs(calDiff).toLocaleString()} kcal`;
       document.getElementById('sub-cal').style.color = calDiff < 0 ? 'var(--danger)' : 'var(--muted)';
 
-      // 蛋白質 KPI
+      // 2. 當日蛋白質 KPI
       document.getElementById('kpi-pro').innerText = `${Math.round(dStat.pro)} g`;
       document.getElementById('bar-pro').style.width = `${Math.min(100, (dStat.pro / TARGET_PRO) * 100)}%`;
       const proDiff = Math.round(TARGET_PRO - dStat.pro);
       document.getElementById('sub-pro').innerText = proDiff > 0 ? `差 ${proDiff} g 達標` : `✅ 已達標 (+${Math.abs(proDiff)} g)`;
 
-      // 步數 KPI
+      // 3. 當日步數 KPI
       document.getElementById('kpi-steps').innerText = dStat.steps.toLocaleString();
       document.getElementById('bar-steps').style.width = `${Math.min(100, (dStat.steps / TARGET_STEPS) * 100)}%`;
       const stepsDiff = TARGET_STEPS - dStat.steps;
       document.getElementById('sub-steps').innerText = stepsDiff > 0 ? `差 ${stepsDiff.toLocaleString()} 步達標` : `✅ 已達標 (+${Math.abs(stepsDiff).toLocaleString()} 步)`;
 
-      // 體重 KPI
+      // 4. 當日體重 KPI
       const latestWeightDate = weightDates.filter(d => d <= selectedViewDate).pop() || weightDates[weightDates.length - 1];
       if (dStat.weight > 0) {
         document.getElementById('kpi-weight').innerText = `${dStat.weight.toFixed(1)} kg`;
@@ -972,11 +1249,123 @@
         document.getElementById('sub-weight').innerText = `喺下方輸入體重開啟趨勢線`;
       }
 
-      // 花費 KPI
+      // 5. 當日餐費 KPI
       const activeFoodDays = allRecordedDates.filter(d => dailyMap[d].cal > 0 || dailyMap[d].cost > 0).length || 1;
       const avgCost = Math.round(totalCost / activeFoodDays);
       document.getElementById('kpi-cost').innerText = `$${Math.round(dStat.cost).toLocaleString()}`;
-      document.getElementById('sub-cost').innerText = `累積：$${Math.round(totalCost).toLocaleString()}｜有紀錄日均：$${avgCost}`;
+      document.getElementById('sub-cost').innerText = `總累積：$${Math.round(totalCost).toLocaleString()}｜總日均：$${avgCost}`;
+
+      // 6. 🏦 本週熱量儲蓄池計算（週一至週日）
+      const weekDates = getWeekDatesMondayToSunday(selectedViewDate);
+      const wkStart = weekDates[0].slice(5).replace('-', '/');
+      const wkEnd = weekDates[6].slice(5).replace('-', '/');
+      document.getElementById('week-range-label').innerText = `${wkStart}–${wkEnd}`;
+
+      let weekCal = 0, loggedWeekDays = 0;
+      weekDates.forEach(d => {
+        if (dailyMap[d] && dailyMap[d].cal > 0) {
+          weekCal += dailyMap[d].cal;
+          loggedWeekDays++;
+        }
+      });
+
+      const weekRounded = Math.round(weekCal);
+      const weekBanked = (loggedWeekDays * TARGET_CAL) - weekRounded; // 正數=省下儲備，負數=暫時透支
+      const unloggedDays = 7 - loggedWeekDays;
+      document.getElementById('week-cal-val').innerText = `${weekRounded.toLocaleString()} / ${WEEKLY_CAL_TARGET.toLocaleString()} kcal`;
+      document.getElementById('week-logged-days').innerText = `已記 ${loggedWeekDays}/7 日`;
+      document.getElementById('bar-week-cal').style.width = `${Math.min(100, (weekRounded / WEEKLY_CAL_TARGET) * 100)}%`;
+      document.getElementById('tick-week-pace').style.left = `${(loggedWeekDays / 7) * 100}%`;
+
+      const wkBadge = document.getElementById('week-bank-badge');
+      const wkSub = document.getElementById('sub-week-bank');
+      const wkBar = document.getElementById('bar-week-cal');
+      wkBadge.className = 'tl-badge';
+
+      if (loggedWeekDays === 0) {
+        wkBadge.classList.add('tl-green');
+        wkBadge.innerText = '🟢 全新週期';
+        wkBar.style.background = 'var(--accent)';
+        wkSub.innerText = `本週總額度 14,000 kcal（每日目標 2,000 kcal）`;
+      } else if (weekBanked >= 0) {
+        wkBadge.classList.add('tl-green');
+        wkBadge.innerText = `🟢 儲備 +${weekBanked.toLocaleString()} kcal`;
+        wkBar.style.background = 'var(--accent)';
+        wkSub.innerText = `已記 ${loggedWeekDays} 日累積省下 ${weekBanked.toLocaleString()} kcal，可留作聚餐緩衝！`;
+      } else {
+        const deficit = Math.abs(weekBanked);
+        if (unloggedDays > 0 && (WEEKLY_CAL_TARGET - weekRounded) > 0) {
+          const rebalanceDaily = Math.round((WEEKLY_CAL_TARGET - weekRounded) / unloggedDays);
+          wkBadge.classList.add(deficit <= 500 ? 'tl-yellow' : 'tl-red');
+          wkBadge.innerText = `${deficit <= 500 ? '🟡' : '🔴'} 暫透支 -${deficit.toLocaleString()} kcal`;
+          wkBar.style.background = deficit <= 500 ? 'var(--warn)' : 'var(--danger)';
+          wkSub.innerText = `本週餘下 ${unloggedDays} 日平均控喺 ${rebalanceDaily.toLocaleString()} kcal 即可全週打平達標！`;
+        } else {
+          wkBadge.classList.add('tl-red');
+          wkBadge.innerText = `🔴 週超標 +${deficit.toLocaleString()} kcal`;
+          wkBar.style.background = 'var(--danger)';
+          wkSub.innerText = `本週累計超出目標 ${deficit.toLocaleString()} kcal，下週再追返！`;
+        }
+      }
+
+      // 7. 🚦 每月餐費預算封頂計算（紅綠燈管控）
+      const ym = selectedViewDate.slice(0, 7); // YYYY-MM
+      const [yrNum, moNum] = ym.split('-').map(Number);
+      const daysInMonth = new Date(yrNum, moNum, 0).getDate();
+      document.getElementById('month-label').innerText = `${yrNum}年${moNum}月`;
+
+      let monthCost = 0;
+      allRecordedDates.forEach(d => {
+        if (d.startsWith(ym)) monthCost += dailyMap[d].cost;
+      });
+      const monthCostRound = Math.round(monthCost);
+      const budgetPct = Math.round((monthCostRound / monthlyBudgetCap) * 100);
+
+      const todayISO = getTodayISO();
+      let elapsedDays = daysInMonth;
+      let remDays = 0;
+      if (ym === todayISO.slice(0, 7)) {
+        const curDay = Number(todayISO.slice(8, 10));
+        const todayHasSpend = Boolean(dailyMap[todayISO] && dailyMap[todayISO].cost > 0);
+        elapsedDays = todayHasSpend ? curDay : Math.max(0, curDay - 1);
+        remDays = Math.max(1, daysInMonth - elapsedDays);
+      } else if (ym > todayISO.slice(0, 7)) {
+        elapsedDays = 0;
+        remDays = daysInMonth;
+      }
+
+      const timeElapsedPct = Math.round((elapsedDays / daysInMonth) * 100);
+      document.getElementById('month-cost-val').innerText = `$${monthCostRound.toLocaleString()} / $${monthlyBudgetCap.toLocaleString()}`;
+      document.getElementById('month-pct-label').innerText = `已用 ${budgetPct}%`;
+      document.getElementById('bar-month-budget').style.width = `${Math.min(100, budgetPct)}%`;
+      document.getElementById('tick-month-pace').style.left = `${Math.min(100, timeElapsedPct)}%`;
+
+      const bBadge = document.getElementById('budget-tl-badge');
+      const bBar = document.getElementById('bar-month-budget');
+      const bSub = document.getElementById('sub-month-budget');
+      bBadge.className = 'tl-badge';
+
+      const remBudget = monthlyBudgetCap - monthCostRound;
+      if (remBudget < 0) {
+        bBadge.classList.add('tl-red');
+        bBadge.innerText = '🔴 預算超支';
+        bBar.style.background = 'var(--danger)';
+        bSub.innerText = `本月已超出上限 $${Math.abs(remBudget).toLocaleString()}｜日均實際 $${Math.round(monthCostRound / Math.max(1, elapsedDays))}`;
+      } else if (budgetPct > timeElapsedPct + 12 || budgetPct >= 88) {
+        bBadge.classList.add('tl-yellow');
+        bBadge.innerText = '🟡 留意節奏';
+        bBar.style.background = 'var(--warn)';
+        bSub.innerText = remDays > 0
+          ? `剩餘 $${remBudget.toLocaleString()}｜餘下 ${remDays} 日每日可用 $${Math.floor(remBudget / remDays).toLocaleString()}`
+          : `全月結餘 $${remBudget.toLocaleString()}（成功守住預算）`;
+      } else {
+        bBadge.classList.add('tl-green');
+        bBadge.innerText = '🟢 進度健康';
+        bBar.style.background = 'var(--accent)';
+        bSub.innerText = remDays > 0
+          ? `剩餘 $${remBudget.toLocaleString()}｜餘下 ${remDays} 日每日可用 $${Math.floor(remBudget / remDays).toLocaleString()}`
+          : `全月結餘 $${remBudget.toLocaleString()}（成功守住預算）`;
+      }
 
       // 三大營養素比例條
       const proKcal = dStat.pro * 4, carbKcal = dStat.carb * 4, fatKcal = dStat.fat * 9;
@@ -1086,7 +1475,6 @@
       const subtitleEl = document.getElementById('chart-subtitle');
       const summaryEl = document.getElementById('chart-period-summary');
 
-      // 全景 Tooltip：無論處於邊個 Tab，滑鼠掃過都一次過睇晒當日完整成績表
       const commonTooltip = {
         backgroundColor: 'rgba(15, 23, 42, 0.96)',
         titleColor: '#f8fafc',
@@ -1153,7 +1541,6 @@
         }
       };
 
-      // 視角 1：熱量與三大營養素構成（Stacked Bar + 2,000 kcal 警戒線）
       if (chartMode === 'cal') {
         const activeInView = currentTimelineDates.filter(d => dailyMap[d] && dailyMap[d].cal > 0);
         const avgCal = activeInView.length > 0
@@ -1176,7 +1563,6 @@
           if (mSum === 0) {
             pData.push(0); cData.push(0); fData.push(0); otherData.push(Math.round(st.cal));
           } else {
-            // 按比例對齊實際總卡路里，確保堆疊總高度 100% 等於當日輸入熱量
             const ratio = st.cal / mSum;
             pData.push(Math.round(pk * ratio));
             cData.push(Math.round(ck * ratio));
@@ -1261,7 +1647,6 @@
         return;
       }
 
-      // 視角 2：體重趨勢（動態鎖定黃金縮放區間 + spanGaps 自動連貫）
       if (chartMode === 'weight') {
         const wVals = currentTimelineDates.map(d => (dailyMap[d] && dailyMap[d].weight > 0) ? dailyMap[d].weight : null);
         const maVals = currentTimelineDates.map(d => weightMA7[d] || null);
@@ -1327,7 +1712,6 @@
         return;
       }
 
-      // 視角 3：步數達標柱狀圖（9,000 步目標線）
       if (chartMode === 'steps') {
         const sVals = currentTimelineDates.map(d => dailyMap[d] ? dailyMap[d].steps : 0);
         const activeStepDays = sVals.filter(v => v > 0);
@@ -1384,7 +1768,6 @@
         return;
       }
 
-      // 視角 4：餐飲開支追蹤（每日餐費柱 + 區間日均線）
       if (chartMode === 'cost') {
         const costVals = currentTimelineDates.map(d => dailyMap[d] ? Math.round(dailyMap[d].cost) : 0);
         const activeCostVals = costVals.filter(v => v > 0);
@@ -1485,7 +1868,7 @@
 
         closeEditModal();
         showToast('✅ 修改已儲存！');
-        await fetchSheetData();
+        await fetchSheetData(false);
       } catch (err) {
         status.innerText = '儲存失敗：' + err.message;
       } finally {
@@ -1521,13 +1904,13 @@
             }]
           })
         });
-        if (res.status === 401) { showLogin(); return; }
+        if (res.status === 401) { accessToken = null; throw new Error('授權過期，請再按一次'); }
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
 
         closeEditModal();
         showToast('🗑️ 已徹底刪除該行！');
-        await fetchSheetData();
+        await fetchSheetData(false);
       } catch (err) {
         status.innerText = '刪除失敗：' + err.message;
       } finally {
