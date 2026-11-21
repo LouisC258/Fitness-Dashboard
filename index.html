@@ -198,6 +198,9 @@
     const TARGET_PRO = 140;
     const TARGET_STEPS = 9000;
 
+    const TOKEN_STORAGE_KEY = 'fit_dash_access_token';
+    const EXPIRY_STORAGE_KEY = 'fit_dash_token_expiry';
+
     let tokenClient = null;
     let accessToken = null;
     let chartInstance = null;
@@ -207,6 +210,20 @@
       const cleaned = String(val).replace(/[^0-9.-]+/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
+    }
+
+    function showDashboard() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      fetchSheetData();
+    }
+
+    function showLogin() {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(EXPIRY_STORAGE_KEY);
+      accessToken = null;
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
     }
 
     window.onload = () => {
@@ -221,28 +238,36 @@
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            fetchSheetData();
+            // 儲存 Token 同過期時間（預早 60 秒作緩衝）
+            const expiresInMs = ((tokenResponse.expires_in || 3600) - 60) * 1000;
+            localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+            localStorage.setItem(EXPIRY_STORAGE_KEY, String(Date.now() + expiresInMs));
+            showDashboard();
           }
         },
       });
+
+      // 檢查本地係咪已經有未過期嘅 Token，有就直接入 Dashboard 唔使再登入
+      const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const savedExpiry = Number(localStorage.getItem(EXPIRY_STORAGE_KEY) || 0);
+      if (savedToken && Date.now() < savedExpiry) {
+        accessToken = savedToken;
+        showDashboard();
+      }
     };
 
     function handleAuthClick() {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+      // 唔再強制 prompt: 'consent'，過期後一撳即入唔使重覆授權
+      tokenClient.requestAccessToken({ prompt: '' });
     }
 
     function handleSignoutClick() {
       if (accessToken) {
         google.accounts.oauth2.revoke(accessToken);
-        accessToken = null;
       }
-      document.getElementById('dashboard').classList.add('hidden');
-      document.getElementById('login-screen').classList.remove('hidden');
+      showLogin();
     }
 
-    // 獨立快速更新步數
     async function handleQuickStepsSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('qs-btn');
@@ -350,6 +375,11 @@
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
+        if (res.status === 401) {
+          // Token 失效時自動退回登入畫面
+          showLogin();
+          return;
+        }
         const data = await res.json();
         if (data.error) {
           alert('讀取失敗：' + data.error.message);
