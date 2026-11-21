@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 減肥與餐飲開支 Dashboard</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --warn: #fbbf24; --border: #334155; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .container { max-width: 1050px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .btn { background: var(--accent); color: #052e16; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+    .card-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .card-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12px; color: var(--muted); }
+    input, select { background: var(--input); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; width: 100%; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    #login-screen { text-align: center; padding: 60px 20px; max-width: 520px; margin: 40px auto; }
+    .hidden { display: none !important; }
+    .status-msg { font-size: 13px; margin-left: 12px; color: var(--accent); }
+    .setup-box { text-align: left; background: var(--input); padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 登入畫面 -->
+    <div id="login-screen" class="card">
+      <h2 style="margin-top:0;">🔒 私人減肥與餐飲理財 Dashboard</h2>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">已綁定「2026 減肥 Daily Log」試算表及寫入通道</p>
+      
+      <div class="setup-box">
+        <div class="form-group">
+          <label for="client-id-input">Google OAuth Client ID（只需貼上一次，瀏覽器會自動記住）</label>
+          <input type="text" id="client-id-input" placeholder="貼上你的 xxxxx.apps.googleusercontent.com" />
+        </div>
+      </div>
+
+      <button class="btn" style="width:100%;" onclick="handleAuthClick()">儲存並使用 Google 帳號登入</button>
+    </div>
+
+    <!-- 主儀表板 -->
+    <div id="dashboard" class="hidden">
+      <div class="header">
+        <div>
+          <h2 style="margin:0;">📊 2026 減肥與開支追蹤</h2>
+          <span style="font-size:12px; color:var(--muted);" id="last-updated">資料同步中...</span>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" onclick="fetchSheetData()">🔄 重新整理</button>
+          <button class="btn btn-outline" onclick="resetClientId()">⚙️ 更改 Client ID</button>
+          <button class="btn btn-outline" onclick="handleSignoutClick()">登出</button>
+        </div>
+      </div>
+
+      <!-- KPI 卡片 -->
+      <div class="grid" style="margin-bottom:0;">
+        <div class="card">
+          <div class="card-title">今日攝取熱量</div>
+          <div class="card-value" id="kpi-cal">- kcal</div>
+        </div>
+        <div class="card">
+          <div class="card-title">今日蛋白質</div>
+          <div class="card-value" id="kpi-pro">- g</div>
+        </div>
+        <div class="card">
+          <div class="card-title">今日步數</div>
+          <div class="card-value" id="kpi-steps">-</div>
+        </div>
+        <div class="card">
+          <div class="card-title">累積餐飲總花費</div>
+          <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
+        </div>
+      </div>
+
+      <!-- 快速手動新增表單（經 Apps Script Webhook 寫入） -->
+      <div class="card">
+        <h3 style="margin-top:0; margin-bottom:16px;">✍️ 快速手動新增記錄</h3>
+        <form id="entry-form" onsubmit="handleFormSubmit(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>日期</label>
+              <input type="date" id="f-date" required />
+            </div>
+            <div class="form-group">
+              <label>餐次</label>
+              <select id="f-meal">
+                <option value="早餐">早餐</option>
+                <option value="午餐">午餐</option>
+                <option value="下午茶">下午茶</option>
+                <option value="晚餐">晚餐</option>
+                <option value="宵夜">宵夜</option>
+                <option value="加餐/小食">加餐/小食</option>
+                <option value="飲品">飲品</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>食物內容</label>
+              <input type="text" id="f-food" placeholder="例如：無糖可樂 1罐 / 烚蛋兩隻" required />
+            </div>
+            <div class="form-group">
+              <label>卡路里 (kcal)</label>
+              <input type="number" id="f-cal" placeholder="0" min="0" />
+            </div>
+            <div class="form-group">
+              <label>蛋白質 (g)</label>
+              <input type="number" id="f-pro" placeholder="0" min="0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label>碳水 (g)</label>
+              <input type="number" id="f-carb" placeholder="0" min="0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label>脂肪 (g)</label>
+              <input type="number" id="f-fat" placeholder="0" min="0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label>花費 (HKD)</label>
+              <input type="number" id="f-cost" placeholder="0" min="0" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label>今日步數（可選）</label>
+              <input type="number" id="f-steps" placeholder="例如：8500" min="0" />
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>備註 (Remarks)</label>
+              <input type="text" id="f-remarks" placeholder="例如：走汁、少飯、7-11買" />
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; align-items:center;">
+            <button type="submit" class="btn" id="submit-btn">➕ 寫入 Google Sheet</button>
+            <span id="form-status" class="status-msg"></span>
+          </div>
+        </form>
+      </div>
+
+      <!-- 圖表區 -->
+      <div class="card">
+        <canvas id="calorieChart" height="95"></canvas>
+      </div>
+
+      <!-- 最近飲食記錄 -->
+      <div class="card" style="overflow-x:auto;">
+        <h3 style="margin-top:0;">最近飲食明細</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>餐次</th>
+              <th>食物內容</th>
+              <th>熱量</th>
+              <th>蛋白質</th>
+              <th>花費</th>
+              <th>步數</th>
+              <th>備註</th>
+            </tr>
+          </thead>
+          <tbody id="log-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 已全部預先綁定你的試算表 ID 及 Apps Script Webhook 網址
+    const SPREADSHEET_ID = '1WhufyrcY3t-X_7XoqpevEGQhua-ar9AHIxG01Napiho';
+    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwudHI5gZHzZf7WS9F9D4v8ZQ2jWrC-7lhCgEKIv2quXpiJPLZWYe0sYr93bz-QjAg/exec';
+    const SECRET_TOKEN = 'Louis_Fit_2026_SecretKey_9988';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+    let tokenClient = null;
+    let accessToken = null;
+    let chartInstance = null;
+
+    window.onload = () => {
+      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+      document.getElementById('f-date').value = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+
+      // 自動讀取瀏覽器已儲存的 Client ID
+      const savedClientId = localStorage.getItem('louis_fit_client_id') || '';
+      document.getElementById('client-id-input').value = savedClientId;
+    };
+
+    function handleAuthClick() {
+      const clientId = document.getElementById('client-id-input').value.trim();
+      if (!clientId || !clientId.includes('.apps.googleusercontent.com')) {
+        alert('請先貼上有效的 Google OAuth Client ID（結尾為 .apps.googleusercontent.com）');
+        return;
+      }
+      localStorage.setItem('louis_fit_client_id', clientId);
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            accessToken = tokenResponse.access_token;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            fetchSheetData();
+          }
+        },
+      });
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    function resetClientId() {
+      handleSignoutClick();
+    }
+
+    function handleSignoutClick() {
+      if (accessToken) {
+        google.accounts.oauth2.revoke(accessToken);
+        accessToken = null;
+      }
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const status = document.getElementById('form-status');
+      btn.disabled = true;
+      status.style.color = '#94a3b8';
+      status.innerText = '正在寫入...';
+
+      const payload = {
+        token: SECRET_TOKEN,
+        date: document.getElementById('f-date').value,
+        meal: document.getElementById('f-meal').value,
+        food: document.getElementById('f-food').value.trim(),
+        cal: document.getElementById('f-cal').value ? Number(document.getElementById('f-cal').value) : 0,
+        pro: document.getElementById('f-pro').value ? Number(document.getElementById('f-pro').value) : 0,
+        carb: document.getElementById('f-carb').value ? Number(document.getElementById('f-carb').value) : 0,
+        fat: document.getElementById('f-fat').value ? Number(document.getElementById('f-fat').value) : 0,
+        cost: document.getElementById('f-cost').value ? Number(document.getElementById('f-cost').value) : 0,
+        steps: document.getElementById('f-steps').value ? Number(document.getElementById('f-steps').value) : '',
+        remarks: document.getElementById('f-remarks').value.trim()
+      };
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          status.style.color = '#10b981';
+          status.innerText = '✅ 已成功寫入！';
+          ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
+          await fetchSheetData();
+          setTimeout(() => { status.innerText = ''; }, 3000);
+        } else {
+          status.style.color = '#ef4444';
+          status.innerText = '寫入失敗：' + (result.message || '未知錯誤');
+        }
+      } catch (err) {
+        console.error(err);
+        status.style.color = '#ef4444';
+        status.innerText = '連線錯誤，請檢查網路';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function fetchSheetData() {
+      if (!accessToken) return;
+      try {
+        const range = encodeURIComponent("'Daily Log'!A2:J500");
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('讀取失敗：' + data.error.message);
+          return;
+        }
+        renderDashboard(data.values || []);
+        document.getElementById('last-updated').innerText = '最後同步：' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderDashboard(rows) {
+      const validRows = rows.filter(r => r[0] && r[2]);
+      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+      const todayStr = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+
+      let todayCal = 0, todayPro = 0, todaySteps = 0, totalCost = 0;
+      const dailyMap = {};
+
+      validRows.forEach(r => {
+        const date = r[0];
+        const cal = parseFloat(r[3]) || 0;
+        const pro = parseFloat(r[4]) || 0;
+        const cost = parseFloat(String(r[7] || '0').replace(/[^0-9.-]+/g, '')) || 0;
+        const steps = parseInt(String(r[8] || '0').replace(/[^0-9]+/g, '')) || 0;
+
+        totalCost += cost;
+        if (!dailyMap[date]) dailyMap[date] = { cal: 0, cost: 0 };
+        dailyMap[date].cal += cal;
+        dailyMap[date].cost += cost;
+      });
+
+      const dates = Object.keys(dailyMap).sort();
+      const targetDate = dailyMap[todayStr] ? todayStr : dates[dates.length - 1];
+      if (targetDate) {
+        validRows.filter(r => r[0] === targetDate).forEach(r => {
+          todayCal += parseFloat(r[3]) || 0;
+          todayPro += parseFloat(r[4]) || 0;
+          const s = parseInt(String(r[8] || '0').replace(/[^0-9]+/g, '')) || 0;
+          if (s > todaySteps) todaySteps = s;
+        });
+      }
+
+      document.getElementById('kpi-cal').innerText = `${Math.round(todayCal)} kcal`;
+      document.getElementById('kpi-pro').innerText = `${Math.round(todayPro)} g`;
+      document.getElementById('kpi-steps').innerText = todaySteps.toLocaleString();
+      document.getElementById('kpi-cost').innerText = `$${Math.round(totalCost)}`;
+
+      const tbody = document.getElementById('log-table-body');
+      tbody.innerHTML = validRows.slice().reverse().slice(0, 20).map(r => `
+        <tr>
+          <td>${r[0] || ''}</td>
+          <td>${r[1] || ''}</td>
+          <td>${r[2] || ''}</td>
+          <td>${r[3] || 0} kcal</td>
+          <td>${r[4] || 0} g</td>
+          <td>$${r[7] || 0}</td>
+          <td>${r[8] ? Number(r[8]).toLocaleString() : '-'}</td>
+          <td style="color:var(--muted);">${r[9] || ''}</td>
+        </tr>
+      `).join('');
+
+      const ctx = document.getElementById('calorieChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [
+            {
+              label: '每日總熱量 (kcal)',
+              data: dates.map(d => dailyMap[d].cal),
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              yAxisID: 'y'
+            },
+            {
+              label: '每日餐費 (HKD)',
+              data: dates.map(d => dailyMap[d].cost),
+              type: 'line',
+              borderColor: '#fbbf24',
+              backgroundColor: '#fbbf24',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+            y1: { type: 'linear', position: 'right', ticks: { color: '#fbbf24' }, grid: { drawOnChartArea: false } },
+            x: { ticks: { color: '#94a3b8' } }
+          },
+          plugins: { legend: { labels: { color: '#f8fafc' } } }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
