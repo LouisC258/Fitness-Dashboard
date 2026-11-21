@@ -2,55 +2,150 @@
 <html lang="zh-HK">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2026 減肥與餐飲開支 Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>2026 減肥與開支 Dashboard</title>
+  <!-- iOS PWA 原生全螢幕設定與專屬 SVG 圖示 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="減肥日誌" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><circle cx='50' cy='50' r='36' fill='none' stroke='%2310b981' stroke-width='10'/><path d='M36 52 L46 62 L66 38' fill='none' stroke='%2338bdf8' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230f172a'/><circle cx='50' cy='50' r='34' fill='none' stroke='%2310b981' stroke-width='10'/><path d='M36 52 L46 62 L66 38' fill='none' stroke='%2338bdf8' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --blue: #38bdf8; --warn: #fbbf24; --danger: #ef4444; --border: #334155; }
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; }
-    .container { max-width: 1120px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-    .btn { background: var(--accent); color: #052e16; border: none; padding: 9px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; transition: opacity 0.2s; white-space: nowrap; }
-    .btn:hover { opacity: 0.9; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    :root {
+      --bg: #0f172a; --card: #1e293b; --card-hover: #263449; --input: #0f172a;
+      --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --blue: #38bdf8;
+      --warn: #fbbf24; --danger: #ef4444; --purple: #a78bfa; --border: #334155;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); margin: 0;
+      padding: max(16px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+    }
+    .container { max-width: 1160px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      background: var(--accent); color: #052e16; border: none; padding: 9px 14px;
+      border-radius: 9px; font-weight: 600; cursor: pointer; font-size: 13px;
+      transition: all 0.18s ease; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .btn:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-blue { background: var(--blue); color: #082f49; }
+    .btn-purple { background: var(--purple); color: #2e1065; }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--muted); color: var(--text); }
     .btn-outline.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
-    .date-nav { display: flex; align-items: center; gap: 8px; background: var(--card); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
-    .date-nav input[type="date"] { width: auto; padding: 6px 10px; font-size: 13px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
-    .card { background: var(--card); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
-    .card-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
-    .card-value { font-size: 25px; font-weight: 700; color: var(--accent); }
-    .card-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+
+    /* 日期導覽列 */
+    .date-nav {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--card); padding: 10px 14px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .date-nav-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .date-nav input[type="date"] { width: auto; padding: 6px 10px; font-size: 13px; font-weight: 600; }
+
+    /* KPI 卡片網格 */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .card { background: var(--card); padding: 16px 18px; border-radius: 13px; border: 1px solid var(--border); margin-bottom: 14px; }
+    .kpi-card { margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .card-value { font-size: 24px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+    .card-sub { font-size: 12px; color: var(--muted); margin-top: 7px; }
     .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 8px; overflow: hidden; display: flex; }
     .progress-fill { height: 100%; background: var(--accent); transition: width 0.35s ease; }
+
+    /* 營養素比例條 */
     .macro-bar { height: 10px; border-radius: 999px; overflow: hidden; display: flex; background: var(--input); margin: 10px 0 8px; }
     .macro-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
     .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .quick-steps-bar { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+
+    /* 快速步數與體重 Upsert 列 */
+    .quick-bar { display: grid; grid-template-columns: 145px 1fr 1fr auto; gap: 10px; align-items: end; }
+    @media (max-width: 720px) {
+      .quick-bar { grid-template-columns: 1fr 1fr; }
+      .quick-bar .full-m { grid-column: 1 / -1; }
+    }
+
+    /* 表單通用 */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group.full-width { grid-column: 1 / -1; }
     .form-group label { font-size: 12px; color: var(--muted); }
-    input, select, textarea { background: var(--input); border: 1px solid var(--border); color: var(--text); padding: 9px 11px; border-radius: 8px; font-size: 14px; width: 100%; font-family: inherit; }
+    input, select, textarea {
+      background: var(--input); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 11px; border-radius: 8px; font-size: 14px; width: 100%; font-family: inherit;
+    }
     textarea { resize: vertical; line-height: 1.5; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+    /* 彩色餐次膠囊標籤 (還原 Google Sheet 配搭) */
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .meal-早餐 { background: rgba(251, 191, 36, 0.18); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.35); }
+    .meal-午餐 { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .meal-下午茶 { background: rgba(249, 115, 22, 0.18); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.35); }
+    .meal-晚餐 { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .meal-宵夜 { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.38); }
+    .meal-飲品 { background: rgba(45, 212, 191, 0.18); color: #5eead4; border: 1px solid rgba(45, 212, 191, 0.35); }
+    .meal-default { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    /* 桌面版 Table 與 手機版 Card 響應式切換 */
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
     th { color: var(--muted); font-weight: 600; white-space: nowrap; }
     th.sortable { cursor: pointer; user-select: none; color: var(--text); }
     th.sortable:hover { color: var(--accent); }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .mobile-cards { display: none; flex-direction: column; gap: 10px; }
+    .m-card {
+      background: var(--input); border: 1px solid var(--border); border-radius: 11px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .m-card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .m-card-food { font-size: 14px; line-height: 1.45; color: var(--text); font-weight: 500; }
+    .m-card-macros { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); align-items: center; }
+    .m-pill { background: var(--card); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); }
+
+    @media (max-width: 780px) {
+      .desktop-table-wrap { display: none; }
+      .mobile-cards { display: flex; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 400px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 搜尋與過濾列 */
+    .filter-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .search-input { flex: 1; min-width: 180px; padding: 7px 11px; font-size: 13px; }
+
     #login-screen { text-align: center; padding: 60px 20px; max-width: 460px; margin: 60px auto; }
     .hidden { display: none !important; }
-    .status-msg { font-size: 13px; margin-left: 8px; color: var(--accent); }
+    .status-msg { font-size: 12px; color: var(--accent); }
     .section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+
+    /* Toast 浮動通知 */
+    #toast {
+      position: fixed; bottom: 22px; right: 22px; background: #064e3b; color: #ecfdf5;
+      border: 1px solid var(--accent); padding: 10px 16px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+      z-index: 2000; transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
     /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.72); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.74); display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 1000; }
     .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; }
   </style>
 </head>
@@ -59,7 +154,7 @@
     <!-- 登入畫面 -->
     <div id="login-screen" class="card">
       <h2 style="margin-top:0;">🔒 私人減肥與餐飲理財 Dashboard</h2>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">已綁定「2026 減肥 Daily Log」（支援安全讀寫與直接編輯）</p>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">已綁定「2026 減肥 Daily Log」（支援智能讀寫、體重追蹤與一鍵翻兜）</p>
       <button class="btn" style="width:100%; padding:13px; font-size:15px;" onclick="handleAuthClick()">使用 Google 帳號登入</button>
     </div>
 
@@ -79,43 +174,67 @@
 
       <!-- 日期切換列 -->
       <div class="date-nav">
-        <span style="font-size:13px; color:var(--muted);">檢視日期：</span>
-        <button class="btn btn-outline btn-sm" onclick="shiftViewDate(-1)">◀ 前一日</button>
-        <input type="date" id="view-date-picker" onchange="onViewDateChange()" />
-        <button class="btn btn-outline btn-sm" onclick="shiftViewDate(1)">後一日 ▶</button>
-        <button class="btn btn-outline btn-sm" onclick="jumpToToday()">今日</button>
+        <div class="date-nav-left">
+          <span style="font-size:13px; color:var(--muted);">📅 檢視日期：</span>
+          <button class="btn btn-outline btn-sm" onclick="shiftViewDate(-1)">◀</button>
+          <input type="date" id="view-date-picker" onchange="onViewDateChange()" />
+          <button class="btn btn-outline btn-sm" onclick="shiftViewDate(1)">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="jumpToToday()">今日</button>
+        </div>
+        <div style="font-size:12px; color:var(--muted);">💡 提示：直接點擊下方圖表柱狀條即可跳轉該日</div>
       </div>
 
-      <!-- KPI 卡片 -->
-      <div class="grid" style="margin-bottom:0;">
-        <div class="card">
-          <div class="card-title"><span>當日攝取熱量</span><span>目標 2,000</span></div>
-          <div class="card-value" id="kpi-cal">- kcal</div>
-          <div class="progress-bg"><div class="progress-fill" id="bar-cal" style="width:0%;"></div></div>
+      <!-- 5 張核心 KPI 卡片 -->
+      <div class="kpi-grid">
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title"><span>🔥 當日熱量</span><span>目標 2,000</span></div>
+            <div class="card-value" id="kpi-cal">- kcal</div>
+            <div class="progress-bg"><div class="progress-fill" id="bar-cal" style="width:0%;"></div></div>
+          </div>
           <div class="card-sub" id="sub-cal">-</div>
         </div>
-        <div class="card">
-          <div class="card-title"><span>當日蛋白質</span><span>目標 140g</span></div>
-          <div class="card-value" id="kpi-pro">- g</div>
-          <div class="progress-bg"><div class="progress-fill" id="bar-pro" style="width:0%;"></div></div>
+
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title"><span>🥩 當日蛋白質</span><span>目標 140g</span></div>
+            <div class="card-value" id="kpi-pro">- g</div>
+            <div class="progress-bg"><div class="progress-fill" id="bar-pro" style="width:0%;"></div></div>
+          </div>
           <div class="card-sub" id="sub-pro">-</div>
         </div>
-        <div class="card">
-          <div class="card-title"><span>當日步數</span><span>目標 9,000</span></div>
-          <div class="card-value" id="kpi-steps">-</div>
-          <div class="progress-bg"><div class="progress-fill" id="bar-steps" style="width:0%;"></div></div>
+
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title"><span>🚶 當日步數</span><span>目標 9,000</span></div>
+            <div class="card-value" id="kpi-steps">-</div>
+            <div class="progress-bg"><div class="progress-fill" id="bar-steps" style="width:0%;"></div></div>
+          </div>
           <div class="card-sub" id="sub-steps">-</div>
         </div>
-        <div class="card">
-          <div class="card-title"><span>當日 / 累積餐費</span><span>HKD</span></div>
-          <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
+
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title"><span>⚖️ 當日體重</span><span>7日均線</span></div>
+            <div class="card-value" style="color:var(--purple);" id="kpi-weight">- kg</div>
+            <div class="progress-bg"><div class="progress-fill" id="bar-weight" style="width:100%; background:var(--purple); opacity:0.35;"></div></div>
+          </div>
+          <div class="card-sub" id="sub-weight">尚無體重紀錄</div>
+        </div>
+
+        <div class="card kpi-card">
+          <div>
+            <div class="card-title"><span>💰 當日 / 累積餐費</span><span>HKD</span></div>
+            <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
+            <div style="height:6px; margin-top:8px;"></div>
+          </div>
           <div class="card-sub" id="sub-cost">累積：$0｜日均：$0</div>
         </div>
       </div>
 
       <!-- 三大營養素比例條 -->
       <div class="card" style="padding: 14px 18px;">
-        <div class="card-title" style="margin-bottom:0;"><span>當日三大營養素分佈（按熱量佔比）</span><span id="macro-total-g">0g</span></div>
+        <div class="card-title" style="margin-bottom:0;"><span>🥗 當日三大營養素分佈（按熱量佔比）</span><span id="macro-total-g">總克數：0g</span></div>
         <div class="macro-bar">
           <div id="m-bar-pro" style="background:var(--accent); width:0%;"></div>
           <div id="m-bar-carb" style="background:var(--blue); width:0%;"></div>
@@ -128,26 +247,31 @@
         </div>
       </div>
 
-      <!-- 獨立快速更新步數區塊 -->
+      <!-- 智能 Upsert：快速更新步數與體重（自動合併入當日最後一餐，唔留垃圾行） -->
       <div class="card" style="padding: 14px 18px;">
-        <form id="quick-steps-form" class="quick-steps-bar" onsubmit="handleQuickStepsSubmit(event)">
-          <div class="form-group" style="flex: 0 0 150px;">
-            <label>🚶 快速更新步數（日期）</label>
-            <input type="date" id="qs-date" required />
+        <form id="quick-metrics-form" class="quick-bar" onsubmit="handleQuickMetricsSubmit(event)">
+          <div class="form-group full-m">
+            <label>📅 更新日期</label>
+            <input type="date" id="qm-date" required />
           </div>
-          <div class="form-group" style="flex: 1; min-width: 140px;">
-            <label>當日總步數</label>
-            <input type="number" id="qs-steps" placeholder="例如：10981" min="1" required />
+          <div class="form-group">
+            <label>🚶 當日總步數（選填）</label>
+            <input type="number" id="qm-steps" placeholder="例如：10981" min="0" />
           </div>
-          <button type="submit" class="btn btn-blue" id="qs-btn" style="height: 38px;">🚶 更新步數</button>
-          <span id="qs-status" class="status-msg" style="align-self: center;"></span>
+          <div class="form-group">
+            <label>⚖️ 今日體重 kg（選填）</label>
+            <input type="number" id="qm-weight" placeholder="例如：74.5" min="20" max="250" step="0.1" />
+          </div>
+          <div class="full-m" style="display:flex; align-items:center; gap:8px;">
+            <button type="submit" class="btn btn-blue" id="qm-btn" style="height: 39px; width:100%;">⚡ 智能更新步數 / 體重</button>
+          </div>
         </form>
       </div>
 
-      <!-- 摺疊式：快速手動新增飲食表單（預設收埋） -->
+      <!-- 摺疊式：手動新增飲食表單 -->
       <div id="add-form-card" class="card hidden">
         <div class="section-header">
-          <h3 style="margin:0;">✍️ 手動新增飲食記錄</h3>
+          <h3 style="margin:0; font-size:16px;">✍️ 手動新增飲食記錄</h3>
           <button class="btn btn-outline btn-sm" onclick="toggleAddForm()">收起</button>
         </div>
         <form id="entry-form" onsubmit="handleFormSubmit(event)">
@@ -166,67 +290,91 @@
               </select>
             </div>
             <div class="form-group"><label>花費 (HKD)</label><input type="number" id="f-cost" placeholder="0" min="0" step="0.1" /></div>
-            <div class="form-group"><label>今日步數（可選）</label><input type="number" id="f-steps" placeholder="例如：10981" min="0" /></div>
+            <div class="form-group"><label>步數（選填）</label><input type="number" id="f-steps" placeholder="留空即可" min="0" /></div>
             <div class="form-group full-width">
               <label>食物內容</label>
-              <textarea id="f-food" rows="3" placeholder="例如：無糖可樂 1罐 / 烚蛋兩隻" required></textarea>
+              <textarea id="f-food" rows="3" placeholder="例如：無糖可樂 1罐 / 大快活阿活爆肌餐" required></textarea>
             </div>
             <div class="form-group"><label>卡路里 (kcal)</label><input type="number" id="f-cal" placeholder="0" min="0" /></div>
             <div class="form-group"><label>蛋白質 (g)</label><input type="number" id="f-pro" placeholder="0" min="0" step="0.1" /></div>
             <div class="form-group"><label>碳水 (g)</label><input type="number" id="f-carb" placeholder="0" min="0" step="0.1" /></div>
             <div class="form-group"><label>脂肪 (g)</label><input type="number" id="f-fat" placeholder="0" min="0" step="0.1" /></div>
-            <div class="form-group full-width"><label>備註 (Remarks)</label><input type="text" id="f-remarks" placeholder="例如：走汁、少飯、7-11買" /></div>
+            <div class="form-group full-width"><label>備註 (Remarks)</label><input type="text" id="f-remarks" placeholder="例如：走汁、少飯、Keeta外賣" /></div>
           </div>
           <div style="margin-top:14px; display:flex; align-items:center;">
             <button type="submit" class="btn" id="submit-btn">➕ 寫入 Google Sheet</button>
-            <span id="form-status" class="status-msg"></span>
+            <span id="form-status" class="status-msg" style="margin-left:10px;"></span>
           </div>
         </form>
       </div>
 
-      <!-- 圖表區（附時間範圍切換） -->
+      <!-- 雙模式互動圖表區（支援點擊柱狀條跳轉日期） -->
       <div class="card">
         <div class="section-header">
-          <h3 style="margin:0; font-size:15px;">📈 熱量與餐費趨勢</h3>
-          <div style="display:flex; gap:6px;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm mode-btn active" data-mode="cal" onclick="setChartMode('cal')">🔥 熱量與餐費</button>
+            <button class="btn btn-outline btn-sm mode-btn" data-mode="weight" onclick="setChartMode('weight')">⚖️ 體重與 7 日均線</button>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-outline btn-sm range-btn" data-days="7" onclick="setChartRange(7)">近 7 日</button>
             <button class="btn btn-outline btn-sm range-btn active" data-days="14" onclick="setChartRange(14)">近 14 日</button>
             <button class="btn btn-outline btn-sm range-btn" data-days="30" onclick="setChartRange(30)">近 30 日</button>
             <button class="btn btn-outline btn-sm range-btn" data-days="0" onclick="setChartRange(0)">全部</button>
           </div>
         </div>
-        <canvas id="calorieChart" height="95"></canvas>
+        <canvas id="mainChart" height="92" style="cursor:pointer;"></canvas>
       </div>
 
-      <!-- 最近飲食記錄（支援日期排序、完整三大營養素、隱藏步數雜訊） -->
-      <div class="card" style="overflow-x:auto;">
+      <!-- 飲食明細（桌面 Table + 手機 Card + 搜尋 + 當日聚焦 + 一鍵翻兜） -->
+      <div class="card">
         <div class="section-header">
-          <h3 style="margin:0; font-size:15px;">🍽️ 最近飲食明細</h3>
-          <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;">
-            <input type="checkbox" id="show-step-rows" style="width:auto;" onchange="renderAll()" />
-            顯示純步數更新行
-          </label>
+          <h3 style="margin:0; font-size:16px;">🍽️ 飲食明細記錄 <span id="filter-count" style="font-size:12px; color:var(--muted); font-weight:400;"></span></h3>
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer;">
+              <input type="checkbox" id="only-selected-date" style="width:auto;" onchange="renderAll()" />
+              只睇所選日期 (<span id="only-date-txt"></span>)
+            </label>
+            <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer;">
+              <input type="checkbox" id="show-step-rows" style="width:auto;" onchange="renderAll()" />
+              顯示純步數/體重行
+            </label>
+          </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th class="sortable" onclick="toggleDateSort()" title="點擊切換新至舊 / 舊至新">日期 <span id="sort-icon">🔽</span></th>
-              <th>餐次</th>
-              <th>食物內容</th>
-              <th>熱量</th>
-              <th>蛋白質</th>
-              <th>碳水</th>
-              <th>脂肪</th>
-              <th>花費</th>
-              <th>備註</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="log-table-body"></tbody>
-        </table>
+
+        <div class="filter-toolbar">
+          <input type="text" id="search-box" class="search-input" placeholder="🔍 搜尋餐廳、食物或備註（例如：壽司郎 / 大快活 / 可樂）..." oninput="renderAll()" />
+          <button class="btn btn-outline btn-sm" onclick="toggleDateSort()">排序：<span id="sort-label">日期 新➔舊 🔽</span></button>
+        </div>
+
+        <!-- 桌面版表格 -->
+        <div class="desktop-table-wrap" style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th class="sortable" onclick="toggleDateSort()">日期 <span id="sort-icon">🔽</span></th>
+                <th>餐次</th>
+                <th>食物內容</th>
+                <th>熱量</th>
+                <th>蛋白質</th>
+                <th>碳水</th>
+                <th>脂肪</th>
+                <th>花費</th>
+                <th>備註</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body"></tbody>
+          </table>
+        </div>
+
+        <!-- 手機版自適應卡片流 -->
+        <div id="mobile-cards-container" class="mobile-cards"></div>
       </div>
     </div>
   </div>
+
+  <!-- 浮動 Toast 提示 -->
+  <div id="toast" class="hidden"></div>
 
   <!-- 編輯資料 Modal -->
   <div id="edit-modal" class="modal-backdrop hidden">
@@ -253,7 +401,8 @@
             </select>
           </div>
           <div class="form-group"><label>花費 (HKD)</label><input type="number" id="e-cost" min="0" step="0.1" /></div>
-          <div class="form-group"><label>當日步數（可選）</label><input type="number" id="e-steps" min="0" /></div>
+          <div class="form-group"><label>當日步數</label><input type="number" id="e-steps" min="0" /></div>
+          <div class="form-group"><label>當日體重 (kg)</label><input type="number" id="e-weight" min="0" step="0.1" /></div>
           <div class="form-group full-width">
             <label>食物內容</label>
             <textarea id="e-food" rows="3" required></textarea>
@@ -265,7 +414,7 @@
           <div class="form-group full-width"><label>備註</label><input type="text" id="e-remarks" /></div>
         </div>
         <div style="margin-top:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <button type="button" class="btn btn-danger btn-sm" id="delete-row-btn" onclick="handleDeleteRow()">🗑️ 清空此行</button>
+          <button type="button" class="btn btn-danger btn-sm" id="delete-row-btn" onclick="handleDeleteRow()">🗑️ 刪除此行（連根拔起）</button>
           <div style="display:flex; gap:8px; align-items:center;">
             <span id="edit-status" class="status-msg"></span>
             <button type="button" class="btn btn-outline" onclick="closeEditModal()">取消</button>
@@ -293,10 +442,12 @@
     let tokenClient = null;
     let accessToken = null;
     let chartInstance = null;
+    let dailyLogSheetId = null; // 用於 deleteDimension 真・刪除整行
     let allParsedRows = [];
     let selectedViewDate = '';
     let chartRangeDays = 14;
-    let dateSortDesc = true; // 預設日期新至舊，同一日內按早->午->晚順序
+    let chartMode = 'cal'; // 'cal' | 'weight'
+    let dateSortDesc = true;
 
     function getTodayISO() {
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
@@ -308,6 +459,28 @@
       const cleaned = String(val).replace(/[^0-9.-]+/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    }
+
+    function getMealBadge(meal) {
+      if (!meal) return '<span class="badge meal-default">-</span>';
+      const known = ['早餐', '午餐', '下午茶', '晚餐', '宵夜', '飲品'];
+      const cls = known.includes(meal) ? `meal-${meal}` : 'meal-default';
+      return `<span class="badge ${cls}">${escapeHtml(meal)}</span>`;
+    }
+
+    let toastTimer = null;
+    function showToast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      el.innerText = msg;
+      el.style.background = isError ? '#7f1d1d' : '#064e3b';
+      el.style.borderColor = isError ? 'var(--danger)' : 'var(--accent)';
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 3200);
     }
 
     function showDashboard() {
@@ -331,6 +504,7 @@
     function toggleDateSort() {
       dateSortDesc = !dateSortDesc;
       document.getElementById('sort-icon').innerText = dateSortDesc ? '🔽' : '🔼';
+      document.getElementById('sort-label').innerText = dateSortDesc ? '日期 新➔舊 🔽' : '日期 舊➔新 🔼';
       renderAll();
     }
 
@@ -338,8 +512,9 @@
       const todayISO = getTodayISO();
       selectedViewDate = todayISO;
       document.getElementById('f-date').value = todayISO;
-      document.getElementById('qs-date').value = todayISO;
+      document.getElementById('qm-date').value = todayISO;
       document.getElementById('view-date-picker').value = todayISO;
+      document.getElementById('only-date-txt').innerText = todayISO;
 
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
@@ -373,14 +548,11 @@
     }
 
     async function appendRowToSheet(rowArray) {
-      const range = encodeURIComponent("'Daily Log'!A4:J");
+      const range = encodeURIComponent("'Daily Log'!A4:K");
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ values: [rowArray] })
       });
       if (res.status === 401) { showLogin(); throw new Error('登入已過期'); }
@@ -389,36 +561,108 @@
       return data;
     }
 
-    async function handleQuickStepsSubmit(e) {
-      e.preventDefault();
-      const btn = document.getElementById('qs-btn');
-      const status = document.getElementById('qs-status');
-      const stepsVal = Number(document.getElementById('qs-steps').value);
-      if (!stepsVal || stepsVal <= 0) return;
+    async function updateRowInSheet(rowNum, rowArray) {
+      const range = encodeURIComponent(`'Daily Log'!A${rowNum}:K${rowNum}`);
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [rowArray] })
+      });
+      if (res.status === 401) { showLogin(); throw new Error('登入已過期'); }
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data;
+    }
 
+    // 智能 Upsert 更新步數與體重：優先覆蓋當日最後一行，避免產生多餘垃圾行
+    async function handleQuickMetricsSubmit(e) {
+      e.preventDefault();
+      const dateVal = document.getElementById('qm-date').value;
+      const stepsInput = document.getElementById('qm-steps').value;
+      const weightInput = document.getElementById('qm-weight').value;
+
+      if (!stepsInput && !weightInput) {
+        showToast('請至少輸入步數或體重其中一項', true);
+        return;
+      }
+
+      const btn = document.getElementById('qm-btn');
       btn.disabled = true;
-      status.style.color = '#94a3b8';
-      status.innerText = '更新中...';
+      btn.innerText = '更新中...';
+
+      try {
+        const dayRows = allParsedRows.filter(r => r.date === dateVal);
+        if (dayRows.length > 0) {
+          // 搵當日最後一行作主載體
+          const target = dayRows[dayRows.length - 1];
+          const newSteps = stepsInput ? Math.round(Number(stepsInput)) : (target.steps || '');
+          const newWeight = weightInput ? Number(weightInput) : (target.weight || '');
+
+          await updateRowInSheet(target.rowNum, [
+            target.date, target.meal, target.food,
+            target.cal, target.pro, target.carb, target.fat, target.cost,
+            newSteps, target.remarks, newWeight
+          ]);
+
+          // 如果同日其他較早嘅行曾經填過舊步數/體重，順手清走避免重複干擾
+          for (let i = 0; i < dayRows.length - 1; i++) {
+            const r = dayRows[i];
+            if ((stepsInput && r.steps > 0) || (weightInput && r.weight > 0)) {
+              await updateRowInSheet(r.rowNum, [
+                r.date, r.meal, r.food, r.cal, r.pro, r.carb, r.fat, r.cost,
+                stepsInput ? '' : (r.steps || ''),
+                r.remarks,
+                weightInput ? '' : (r.weight || '')
+              ]);
+            }
+          }
+        } else {
+          // 當日仲未有任何飲食紀錄，先獨立新增一行
+          await appendRowToSheet([
+            dateVal, '', '📊 步數/體重記錄',
+            0, 0, 0, 0, 0,
+            stepsInput ? Math.round(Number(stepsInput)) : '',
+            'Dashboard 快速記錄',
+            weightInput ? Number(weightInput) : ''
+          ]);
+        }
+
+        document.getElementById('qm-steps').value = '';
+        document.getElementById('qm-weight').value = '';
+        selectedViewDate = dateVal;
+        document.getElementById('view-date-picker').value = dateVal;
+        document.getElementById('only-date-txt').innerText = dateVal;
+        showToast('✅ 已智能同步步數 / 體重！');
+        await fetchSheetData();
+      } catch (err) {
+        showToast('更新失敗：' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '⚡ 智能更新步數 / 體重';
+      }
+    }
+
+    // 一鍵「翻兜」常食餐單落所選日期（或今日）
+    async function quickCloneMeal(rowNum) {
+      const src = allParsedRows.find(r => r.rowNum === rowNum);
+      if (!src) return;
+      const targetDate = getTodayISO();
+      if (!confirm(`要將「${src.food}」(${src.cal} kcal) 快速複製新增至今日 (${targetDate}) 嗎？`)) return;
 
       try {
         await appendRowToSheet([
-          document.getElementById('qs-date').value,
-          '',
-          '🚶 步數更新',
-          0, 0, 0, 0, 0,
-          stepsVal,
-          'Dashboard 快速更新步數'
+          targetDate, src.meal || '加餐/小食', src.food,
+          src.cal, src.pro, src.carb, src.fat, src.cost,
+          '', src.remarks, ''
         ]);
-        status.style.color = '#10b981';
-        status.innerText = `✅ 已更新 ${stepsVal.toLocaleString()} 步！`;
-        document.getElementById('qs-steps').value = '';
+        selectedViewDate = targetDate;
+        document.getElementById('view-date-picker').value = targetDate;
+        document.getElementById('only-date-txt').innerText = targetDate;
+        showToast(`✅ 已翻兜「${src.meal || '餐點'}」至今日！`);
         await fetchSheetData();
-        setTimeout(() => { status.innerText = ''; }, 3000);
       } catch (err) {
-        status.style.color = '#ef4444';
-        status.innerText = '失敗：' + err.message;
-      } finally {
-        btn.disabled = false;
+        showToast('複製失敗：' + err.message, true);
       }
     }
 
@@ -427,12 +671,12 @@
       const btn = document.getElementById('submit-btn');
       const status = document.getElementById('form-status');
       btn.disabled = true;
-      status.style.color = '#94a3b8';
       status.innerText = '正在寫入...';
 
       try {
+        const dVal = document.getElementById('f-date').value;
         await appendRowToSheet([
-          document.getElementById('f-date').value,
+          dVal,
           document.getElementById('f-meal').value,
           document.getElementById('f-food').value.trim(),
           document.getElementById('f-cal').value ? Number(document.getElementById('f-cal').value) : 0,
@@ -441,43 +685,53 @@
           document.getElementById('f-fat').value ? Number(document.getElementById('f-fat').value) : 0,
           document.getElementById('f-cost').value ? Number(document.getElementById('f-cost').value) : 0,
           document.getElementById('f-steps').value ? Number(document.getElementById('f-steps').value) : '',
-          document.getElementById('f-remarks').value.trim()
+          document.getElementById('f-remarks').value.trim(),
+          ''
         ]);
-        status.style.color = '#10b981';
-        status.innerText = '✅ 已成功寫入！';
-        ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
+        ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-steps', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
+        status.innerText = '';
+        showToast('✅ 已寫入飲食記錄！');
         await fetchSheetData();
-        setTimeout(() => { status.innerText = ''; }, 3000);
       } catch (err) {
-        status.style.color = '#ef4444';
         status.innerText = '寫入失敗：' + err.message;
       } finally {
         btn.disabled = false;
       }
     }
 
+    async function ensureSheetId() {
+      if (dailyLogSheetId !== null) return dailyLogSheetId;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const data = await res.json();
+      const found = (data.sheets || []).find(s => s.properties && s.properties.title === 'Daily Log');
+      dailyLogSheetId = found ? found.properties.sheetId : 0;
+      return dailyLogSheetId;
+    }
+
     async function fetchSheetData() {
       if (!accessToken) return;
       try {
-        const range = encodeURIComponent("'Daily Log'!A4:J");
+        const range = encodeURIComponent("'Daily Log'!A4:K");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
         if (res.status === 401) { showLogin(); return; }
         const data = await res.json();
-        if (data.error) { alert('讀取失敗：' + data.error.message); return; }
+        if (data.error) { showToast('讀取失敗：' + data.error.message, true); return; }
 
         const rawRows = data.values || [];
         allParsedRows = [];
         rawRows.forEach((r, idx) => {
-          if (r && r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && r[2]) {
+          if (r && r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && (r[2] || r[8] || r[10])) {
             const food = String(r[2] || '');
             const cal = parseNum(r[3]);
             const cost = parseNum(r[7]);
+            const isMetricOnly = (food.includes('步數') || food.includes('體重') || food === '') && cal === 0 && cost === 0;
             allParsedRows.push({
               rowNum: 4 + idx,
               date: String(r[0]).trim(),
               meal: String(r[1] || ''),
-              food: food,
+              food: food || '📊 步數/體重記錄',
               cal: cal,
               pro: parseNum(r[4]),
               carb: parseNum(r[5]),
@@ -485,7 +739,8 @@
               cost: cost,
               steps: Math.round(parseNum(r[8])),
               remarks: String(r[9] || ''),
-              isStepOnly: food.includes('步數更新') && cal === 0 && cost === 0
+              weight: parseNum(r[10]),
+              isStepOnly: isMetricOnly
             });
           }
         });
@@ -494,6 +749,8 @@
         if (dates.length > 0 && !dates.includes(selectedViewDate) && selectedViewDate === getTodayISO()) {
           selectedViewDate = dates[dates.length - 1];
           document.getElementById('view-date-picker').value = selectedViewDate;
+          document.getElementById('qm-date').value = selectedViewDate;
+          document.getElementById('only-date-txt').innerText = selectedViewDate;
         }
 
         renderAll();
@@ -503,24 +760,28 @@
       }
     }
 
+    function setSelectedDate(newDate) {
+      selectedViewDate = newDate;
+      document.getElementById('view-date-picker').value = newDate;
+      document.getElementById('qm-date').value = newDate;
+      document.getElementById('only-date-txt').innerText = newDate;
+      renderAll();
+    }
+
     function shiftViewDate(deltaDays) {
       const d = new Date(selectedViewDate + 'T00:00:00');
       d.setDate(d.getDate() + deltaDays);
       const tzOffset = d.getTimezoneOffset() * 60000;
-      selectedViewDate = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10);
-      document.getElementById('view-date-picker').value = selectedViewDate;
-      renderAll();
+      setSelectedDate((new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10));
     }
 
     function onViewDateChange() {
       const val = document.getElementById('view-date-picker').value;
-      if (val) { selectedViewDate = val; renderAll(); }
+      if (val) setSelectedDate(val);
     }
 
     function jumpToToday() {
-      selectedViewDate = getTodayISO();
-      document.getElementById('view-date-picker').value = selectedViewDate;
-      renderAll();
+      setSelectedDate(getTodayISO());
     }
 
     function setChartRange(days) {
@@ -531,20 +792,39 @@
       renderAll();
     }
 
+    function setChartMode(mode) {
+      chartMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      renderAll();
+    }
+
     function renderAll() {
       let totalCost = 0;
       const dailyMap = {};
 
       allParsedRows.forEach(r => {
         totalCost += r.cost;
-        if (!dailyMap[r.date]) dailyMap[r.date] = { cal: 0, cost: 0 };
+        if (!dailyMap[r.date]) dailyMap[r.date] = { cal: 0, cost: 0, weight: 0 };
         dailyMap[r.date].cal += r.cal;
         dailyMap[r.date].cost += r.cost;
+        if (r.weight > 0) dailyMap[r.date].weight = r.weight;
       });
 
       const allDates = Object.keys(dailyMap).sort();
 
-      let dayCal = 0, dayPro = 0, dayCarb = 0, dayFat = 0, daySteps = 0, dayCost = 0;
+      // 計算 7 日移動平均體重
+      const weightDates = allDates.filter(d => dailyMap[d].weight > 0);
+      const weightMA7 = {};
+      weightDates.forEach((d, idx) => {
+        const windowSlice = weightDates.slice(Math.max(0, idx - 6), idx + 1);
+        const avg = windowSlice.reduce((sum, k) => sum + dailyMap[k].weight, 0) / windowSlice.length;
+        weightMA7[d] = Number(avg.toFixed(2));
+      });
+
+      // 計算所選日期 KPI
+      let dayCal = 0, dayPro = 0, dayCarb = 0, dayFat = 0, daySteps = 0, dayCost = 0, dayWeight = 0;
       allParsedRows.filter(r => r.date === selectedViewDate).forEach(r => {
         dayCal += r.cal;
         dayPro += r.pro;
@@ -552,6 +832,7 @@
         dayFat += r.fat;
         dayCost += r.cost;
         if (r.steps > daySteps) daySteps = r.steps;
+        if (r.weight > 0) dayWeight = r.weight;
       });
 
       // 熱量 KPI
@@ -577,8 +858,22 @@
       const stepsDiff = TARGET_STEPS - daySteps;
       document.getElementById('sub-steps').innerText = stepsDiff > 0 ? `差 ${stepsDiff.toLocaleString()} 步達標` : `✅ 已達標 (+${Math.abs(stepsDiff).toLocaleString()} 步)`;
 
+      // 體重 KPI（如當日未磅重，顯示最近一次體重作參考）
+      const latestWeightDate = weightDates.filter(d => d <= selectedViewDate).pop() || weightDates[weightDates.length - 1];
+      if (dayWeight > 0) {
+        document.getElementById('kpi-weight').innerText = `${dayWeight.toFixed(1)} kg`;
+        document.getElementById('sub-weight').innerText = `7日均線：${weightMA7[selectedViewDate]} kg`;
+      } else if (latestWeightDate) {
+        document.getElementById('kpi-weight').innerText = `${dailyMap[latestWeightDate].weight.toFixed(1)} kg`;
+        document.getElementById('sub-weight').innerText = `最近紀錄 (${latestWeightDate})｜均線 ${weightMA7[latestWeightDate]} kg`;
+      } else {
+        document.getElementById('kpi-weight').innerText = `- kg`;
+        document.getElementById('sub-weight').innerText = `喺下方輸入體重開啟趨勢線`;
+      }
+
       // 花費 KPI
-      const avgCost = allDates.length > 0 ? Math.round(totalCost / allDates.length) : 0;
+      const costDaysCount = allDates.filter(d => dailyMap[d].cal > 0 || dailyMap[d].cost > 0).length || 1;
+      const avgCost = Math.round(totalCost / costDaysCount);
       document.getElementById('kpi-cost').innerText = `$${Math.round(dayCost).toLocaleString()}`;
       document.getElementById('sub-cost').innerText = `累積：$${Math.round(totalCost).toLocaleString()}｜日均：$${avgCost}`;
 
@@ -597,11 +892,21 @@
       document.getElementById('m-carb-txt').innerText = `${Math.round(dayCarb)}g (${carbPct}%)`;
       document.getElementById('m-fat-txt').innerText = `${Math.round(dayFat)}g (${fatPct}%)`;
 
-      // 明細表排序：先按日期（可切換新至舊/舊至新），同一日內按早->午->晚順序
+      // 明細過濾（搜尋 + 只睇所選日期 + 隱藏純步數/體重行）
       const showSteps = document.getElementById('show-step-rows').checked;
-      const displayRows = allParsedRows
+      const onlySelected = document.getElementById('only-selected-date').checked;
+      const keyword = document.getElementById('search-box').value.trim().toLowerCase();
+
+      const filteredRows = allParsedRows
         .filter(r => showSteps || !r.isStepOnly)
-        .slice()
+        .filter(r => !onlySelected || r.date === selectedViewDate)
+        .filter(r => {
+          if (!keyword) return true;
+          return r.food.toLowerCase().includes(keyword) ||
+                 r.remarks.toLowerCase().includes(keyword) ||
+                 r.meal.toLowerCase().includes(keyword) ||
+                 r.date.includes(keyword);
+        })
         .sort((a, b) => {
           if (a.date !== b.date) {
             return dateSortDesc ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date);
@@ -610,29 +915,115 @@
           const orderB = MEAL_ORDER[b.meal] || 9;
           if (orderA !== orderB) return orderA - orderB;
           return a.rowNum - b.rowNum;
-        })
-        .slice(0, 50);
+        });
 
+      const filteredSumCost = filteredRows.reduce((s, r) => s + r.cost, 0);
+      document.getElementById('filter-count').innerText = keyword || onlySelected
+        ? `（共 ${filteredRows.length} 筆｜小計 $${Math.round(filteredSumCost).toLocaleString()}）`
+        : `（顯示最新 ${Math.min(60, filteredRows.length)} / 共 ${filteredRows.length} 筆）`;
+
+      const displayRows = filteredRows.slice(0, 60);
+
+      // 桌面版 Table 渲染
       const tbody = document.getElementById('log-table-body');
       tbody.innerHTML = displayRows.map(r => `
-        <tr>
-          <td style="white-space:nowrap;">${r.date}</td>
-          <td style="white-space:nowrap;">${r.meal || '-'}</td>
-          <td>${r.food}</td>
-          <td style="white-space:nowrap;">${r.cal.toLocaleString()} kcal</td>
-          <td style="white-space:nowrap;">${r.pro} g</td>
+        <tr style="${r.date === selectedViewDate ? 'background: rgba(56, 189, 248, 0.04);' : ''}">
+          <td style="white-space:nowrap; cursor:pointer;" onclick="setSelectedDate('${r.date}')" title="點擊檢視該日">${r.date}</td>
+          <td style="white-space:nowrap;">${getMealBadge(r.meal)}</td>
+          <td>${escapeHtml(r.food)}</td>
+          <td style="white-space:nowrap; font-weight:600;">${r.cal.toLocaleString()} kcal</td>
+          <td style="white-space:nowrap; color:var(--accent);">${r.pro} g</td>
           <td style="white-space:nowrap;">${r.carb} g</td>
           <td style="white-space:nowrap;">${r.fat} g</td>
-          <td style="white-space:nowrap;">$${r.cost}</td>
-          <td style="color:var(--muted);">${r.remarks}</td>
-          <td><button class="btn btn-outline btn-sm" onclick="openEditModal(${r.rowNum})">✏️</button></td>
+          <td style="white-space:nowrap; color:var(--warn);">$${r.cost}</td>
+          <td style="color:var(--muted);">${escapeHtml(r.remarks)}</td>
+          <td style="white-space:nowrap;">
+            <div style="display:flex; gap:5px;">
+              ${!r.isStepOnly ? `<button class="btn btn-outline btn-sm" title="翻兜此餐至今日" onclick="quickCloneMeal(${r.rowNum})">➕</button>` : ''}
+              <button class="btn btn-outline btn-sm" title="編輯或刪除" onclick="openEditModal(${r.rowNum})">✏️</button>
+            </div>
+          </td>
         </tr>
       `).join('');
 
-      // 圖表：限制 maxBarThickness 避免單日數據變大磚頭
-      const chartDates = chartRangeDays > 0 ? allDates.slice(-chartRangeDays) : allDates;
-      const ctx = document.getElementById('calorieChart').getContext('2d');
+      // 手機版 Card 渲染
+      const mobileContainer = document.getElementById('mobile-cards-container');
+      mobileContainer.innerHTML = displayRows.map(r => `
+        <div class="m-card" style="${r.date === selectedViewDate ? 'border-color: rgba(56, 189, 248, 0.45);' : ''}">
+          <div class="m-card-top">
+            <div style="display:flex; align-items:center; gap:8px;" onclick="setSelectedDate('${r.date}')">
+              <span style="font-size:12px; color:var(--muted); font-weight:600;">${r.date}</span>
+              ${getMealBadge(r.meal)}
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-weight:700; color:var(--warn); font-size:14px;">$${r.cost}</span>
+              ${!r.isStepOnly ? `<button class="btn btn-outline btn-sm" onclick="quickCloneMeal(${r.rowNum})">➕</button>` : ''}
+              <button class="btn btn-outline btn-sm" onclick="openEditModal(${r.rowNum})">✏️</button>
+            </div>
+          </div>
+          <div class="m-card-food">${escapeHtml(r.food)}</div>
+          <div class="m-card-macros">
+            <span class="m-pill" style="color:var(--text); font-weight:600;">🔥 ${r.cal.toLocaleString()} kcal</span>
+            <span class="m-pill" style="color:var(--accent);">P ${r.pro}g</span>
+            <span class="m-pill" style="color:var(--blue);">C ${r.carb}g</span>
+            <span class="m-pill" style="color:var(--warn);">F ${r.fat}g</span>
+            ${r.remarks ? `<span style="font-size:11px; color:var(--muted);">📝 ${escapeHtml(r.remarks)}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      renderChart(allDates, dailyMap, weightDates, weightMA7);
+    }
+
+    function renderChart(allDates, dailyMap, weightDates, weightMA7) {
+      const ctx = document.getElementById('mainChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
+
+      if (chartMode === 'weight') {
+        const wDates = chartRangeDays > 0 ? weightDates.slice(-chartRangeDays) : weightDates;
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: wDates,
+            datasets: [
+              {
+                label: '當日體重 (kg)',
+                data: wDates.map(d => dailyMap[d].weight),
+                borderColor: 'rgba(167, 139, 250, 0.55)',
+                backgroundColor: '#a78bfa',
+                pointRadius: wDates.map(d => d === selectedViewDate ? 7 : 4),
+                pointBorderColor: wDates.map(d => d === selectedViewDate ? '#fff' : '#a78bfa'),
+                borderDash: [3, 3],
+                tension: 0.2
+              },
+              {
+                label: '7 日移動平均線 (kg)',
+                data: wDates.map(d => weightMA7[d]),
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                borderWidth: 3,
+                pointRadius: 0,
+                fill: true,
+                tension: 0.35
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            onClick: (evt, elements) => {
+              if (elements.length > 0) setSelectedDate(wDates[elements[0].index]);
+            },
+            scales: {
+              y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+              x: { ticks: { color: '#94a3b8' } }
+            },
+            plugins: { legend: { labels: { color: '#f8fafc' } } }
+          }
+        });
+        return;
+      }
+
+      const chartDates = chartRangeDays > 0 ? allDates.slice(-chartRangeDays) : allDates;
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -641,8 +1032,12 @@
             {
               label: '每日總熱量 (kcal)',
               data: chartDates.map(d => dailyMap[d].cal),
-              backgroundColor: chartDates.map(d => dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.78)' : 'rgba(16, 185, 129, 0.75)'),
-              maxBarThickness: 48,
+              backgroundColor: chartDates.map(d =>
+                dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.78)'
+              ),
+              borderColor: chartDates.map(d => d === selectedViewDate ? '#f8fafc' : 'transparent'),
+              borderWidth: chartDates.map(d => d === selectedViewDate ? 2.5 : 0),
+              maxBarThickness: 46,
               borderRadius: 6,
               yAxisID: 'y'
             },
@@ -662,12 +1057,16 @@
               type: 'line',
               borderColor: '#fbbf24',
               backgroundColor: '#fbbf24',
+              tension: 0.25,
               yAxisID: 'y1'
             }
           ]
         },
         options: {
           responsive: true,
+          onClick: (evt, elements) => {
+            if (elements.length > 0) setSelectedDate(chartDates[elements[0].index]);
+          },
           scales: {
             y: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
             y1: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#fbbf24' }, grid: { drawOnChartArea: false } },
@@ -692,6 +1091,7 @@
       document.getElementById('e-fat').value = row.fat;
       document.getElementById('e-cost').value = row.cost;
       document.getElementById('e-steps').value = row.steps > 0 ? row.steps : '';
+      document.getElementById('e-weight').value = row.weight > 0 ? row.weight : '';
       document.getElementById('e-remarks').value = row.remarks;
       document.getElementById('edit-status').innerText = '';
       document.getElementById('edit-modal').classList.remove('hidden');
@@ -707,73 +1107,71 @@
       const btn = document.getElementById('save-edit-btn');
       const status = document.getElementById('edit-status');
       btn.disabled = true;
-      status.style.color = '#94a3b8';
       status.innerText = '儲存中...';
 
-      const updatedRow = [
-        document.getElementById('e-date').value,
-        document.getElementById('e-meal').value,
-        document.getElementById('e-food').value.trim(),
-        document.getElementById('e-cal').value ? Number(document.getElementById('e-cal').value) : 0,
-        document.getElementById('e-pro').value ? Number(document.getElementById('e-pro').value) : 0,
-        document.getElementById('e-carb').value ? Number(document.getElementById('e-carb').value) : 0,
-        document.getElementById('e-fat').value ? Number(document.getElementById('e-fat').value) : 0,
-        document.getElementById('e-cost').value ? Number(document.getElementById('e-cost').value) : 0,
-        document.getElementById('e-steps').value ? Number(document.getElementById('e-steps').value) : '',
-        document.getElementById('e-remarks').value.trim()
-      ];
-
       try {
-        const range = encodeURIComponent(`'Daily Log'!A${rowNum}:J${rowNum}`);
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ values: [updatedRow] })
-        });
-        if (res.status === 401) { showLogin(); return; }
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+        await updateRowInSheet(rowNum, [
+          document.getElementById('e-date').value,
+          document.getElementById('e-meal').value,
+          document.getElementById('e-food').value.trim(),
+          document.getElementById('e-cal').value ? Number(document.getElementById('e-cal').value) : 0,
+          document.getElementById('e-pro').value ? Number(document.getElementById('e-pro').value) : 0,
+          document.getElementById('e-carb').value ? Number(document.getElementById('e-carb').value) : 0,
+          document.getElementById('e-fat').value ? Number(document.getElementById('e-fat').value) : 0,
+          document.getElementById('e-cost').value ? Number(document.getElementById('e-cost').value) : 0,
+          document.getElementById('e-steps').value ? Number(document.getElementById('e-steps').value) : '',
+          document.getElementById('e-remarks').value.trim(),
+          document.getElementById('e-weight').value ? Number(document.getElementById('e-weight').value) : ''
+        ]);
 
         closeEditModal();
+        showToast('✅ 修改已儲存！');
         await fetchSheetData();
       } catch (err) {
-        status.style.color = '#ef4444';
         status.innerText = '儲存失敗：' + err.message;
       } finally {
         btn.disabled = false;
       }
     }
 
+    // 真・連根拔起刪除整行 (deleteDimension)，唔留空白行
     async function handleDeleteRow() {
       const rowNum = Number(document.getElementById('e-row').value);
-      if (!confirm('確定要清空呢筆記錄嗎？')) return;
+      if (!confirm('確定要徹底刪除此行記錄嗎？（下方資料會自動向上補位，唔留空白行）')) return;
 
       const btn = document.getElementById('delete-row-btn');
       const status = document.getElementById('edit-status');
       btn.disabled = true;
-      status.style.color = '#94a3b8';
-      status.innerText = '清空中...';
+      status.innerText = '刪除中...';
 
       try {
-        const range = encodeURIComponent(`'Daily Log'!A${rowNum}:J${rowNum}`);
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:clear`;
+        const sheetId = await ensureSheetId();
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`;
         const res = await fetch(url, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` }
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requests: [{
+              deleteDimension: {
+                range: {
+                  sheetId: sheetId,
+                  dimension: 'ROWS',
+                  startIndex: rowNum - 1,
+                  endIndex: rowNum
+                }
+              }
+            }]
+          })
         });
         if (res.status === 401) { showLogin(); return; }
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
 
         closeEditModal();
+        showToast('🗑️ 已徹底刪除該行！');
         await fetchSheetData();
       } catch (err) {
-        status.style.color = '#ef4444';
-        status.innerText = '清空失敗：' + err.message;
+        status.innerText = '刪除失敗：' + err.message;
       } finally {
         btn.disabled = false;
       }
