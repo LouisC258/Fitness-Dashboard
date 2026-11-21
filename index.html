@@ -7,7 +7,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --warn: #fbbf24; --border: #334155; }
+    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --warn: #fbbf24; --danger: #ef4444; --border: #334155; }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
     .container { max-width: 1050px; margin: 0 auto; }
@@ -16,10 +16,12 @@
     .btn:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
-    .card-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-    .card-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .card-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .card-value { font-size: 26px; font-weight: 700; color: var(--accent); }
+    .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 12px; color: var(--muted); }
@@ -55,23 +57,27 @@
         </div>
       </div>
 
-      <!-- KPI 卡片 -->
+      <!-- KPI 卡片（含 2,000 kcal / 140g 蛋白質 / 9,000 步目標進度條） -->
       <div class="grid" style="margin-bottom:0;">
         <div class="card">
-          <div class="card-title">今日攝取熱量</div>
+          <div class="card-title"><span>攝取熱量</span><span id="target-date-label">目標 2,000</span></div>
           <div class="card-value" id="kpi-cal">- kcal</div>
+          <div class="progress-bg"><div class="progress-fill" id="bar-cal" style="width:0%;"></div></div>
         </div>
         <div class="card">
-          <div class="card-title">今日蛋白質</div>
+          <div class="card-title"><span>蛋白質</span><span>目標 140g</span></div>
           <div class="card-value" id="kpi-pro">- g</div>
+          <div class="progress-bg"><div class="progress-fill" id="bar-pro" style="width:0%;"></div></div>
         </div>
         <div class="card">
-          <div class="card-title">今日步數</div>
+          <div class="card-title"><span>步數</span><span>目標 9,000</span></div>
           <div class="card-value" id="kpi-steps">-</div>
+          <div class="progress-bg"><div class="progress-fill" id="bar-steps" style="width:0%;"></div></div>
         </div>
         <div class="card">
-          <div class="card-title">累積餐飲總花費</div>
+          <div class="card-title"><span>累積餐飲總花費</span><span>HKD</span></div>
           <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:8px;" id="avg-daily-cost">日均花費：$0</div>
         </div>
       </div>
 
@@ -169,6 +175,10 @@
     const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwudHI5gZHzZf7WS9F9D4v8ZQ2jWrC-7lhCgEKIv2quXpiJPLZWYe0sYr93bz-QjAg/exec';
     const SECRET_TOKEN = 'Louis_Fit_2026_SecretKey_9988';
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+    const TARGET_CAL = 2000;
+    const TARGET_PRO = 140;
+    const TARGET_STEPS = 9000;
 
     let tokenClient = null;
     let accessToken = null;
@@ -297,6 +307,7 @@
       const dates = Object.keys(dailyMap).sort();
       const targetDate = dailyMap[todayStr] ? todayStr : dates[dates.length - 1];
       if (targetDate) {
+        document.getElementById('target-date-label').innerText = `${targetDate} (目標 ${TARGET_CAL})`;
         validRows.filter(r => r[0] === targetDate).forEach(r => {
           todayCal += parseFloat(r[3]) || 0;
           todayPro += parseFloat(r[4]) || 0;
@@ -305,10 +316,26 @@
         });
       }
 
-      document.getElementById('kpi-cal').innerText = `${Math.round(todayCal)} kcal`;
+      // 更新熱量卡片及進度條
+      const kpiCalEl = document.getElementById('kpi-cal');
+      const barCalEl = document.getElementById('bar-cal');
+      kpiCalEl.innerText = `${Math.round(todayCal)} kcal`;
+      kpiCalEl.style.color = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
+      barCalEl.style.width = `${Math.min(100, (todayCal / TARGET_CAL) * 100)}%`;
+      barCalEl.style.background = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
+
+      // 更新蛋白質進度條
       document.getElementById('kpi-pro').innerText = `${Math.round(todayPro)} g`;
+      document.getElementById('bar-pro').style.width = `${Math.min(100, (todayPro / TARGET_PRO) * 100)}%`;
+
+      // 更新步數進度條
       document.getElementById('kpi-steps').innerText = todaySteps.toLocaleString();
+      document.getElementById('bar-steps').style.width = `${Math.min(100, (todaySteps / TARGET_STEPS) * 100)}%`;
+
+      // 更新花費
       document.getElementById('kpi-cost').innerText = `$${Math.round(totalCost)}`;
+      const avgCost = dates.length > 0 ? Math.round(totalCost / dates.length) : 0;
+      document.getElementById('avg-daily-cost').innerText = `日均餐費：$${avgCost}`;
 
       const tbody = document.getElementById('log-table-body');
       tbody.innerHTML = validRows.slice().reverse().slice(0, 20).map(r => `
@@ -334,7 +361,17 @@
             {
               label: '每日總熱量 (kcal)',
               data: dates.map(d => dailyMap[d].cal),
-              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              backgroundColor: dates.map(d => dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.75)' : 'rgba(16, 185, 129, 0.7)'),
+              yAxisID: 'y'
+            },
+            {
+              label: '2,000 kcal 目標線',
+              data: dates.map(() => TARGET_CAL),
+              type: 'line',
+              borderColor: '#94a3b8',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
               yAxisID: 'y'
             },
             {
