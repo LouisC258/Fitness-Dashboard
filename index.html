@@ -28,10 +28,9 @@
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
     th { color: var(--muted); font-weight: 600; }
-    #login-screen { text-align: center; padding: 60px 20px; max-width: 520px; margin: 40px auto; }
+    #login-screen { text-align: center; padding: 70px 20px; max-width: 480px; margin: 60px auto; }
     .hidden { display: none !important; }
     .status-msg { font-size: 13px; margin-left: 12px; color: var(--accent); }
-    .setup-box { text-align: left; background: var(--input); padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -39,16 +38,8 @@
     <!-- 登入畫面 -->
     <div id="login-screen" class="card">
       <h2 style="margin-top:0;">🔒 私人減肥與餐飲理財 Dashboard</h2>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">已綁定「2026 減肥 Daily Log」試算表及寫入通道</p>
-      
-      <div class="setup-box">
-        <div class="form-group">
-          <label for="client-id-input">Google OAuth Client ID（只需貼上一次，瀏覽器會自動記住）</label>
-          <input type="text" id="client-id-input" placeholder="貼上你的 xxxxx.apps.googleusercontent.com" />
-        </div>
-      </div>
-
-      <button class="btn" style="width:100%;" onclick="handleAuthClick()">儲存並使用 Google 帳號登入</button>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 28px;">已綁定「2026 減肥 Daily Log」及安全寫入通道</p>
+      <button class="btn" style="width:100%; padding:14px; font-size:15px;" onclick="handleAuthClick()">使用 Google 帳號登入</button>
     </div>
 
     <!-- 主儀表板 -->
@@ -60,7 +51,6 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn" onclick="fetchSheetData()">🔄 重新整理</button>
-          <button class="btn btn-outline" onclick="resetClientId()">⚙️ 更改 Client ID</button>
           <button class="btn btn-outline" onclick="handleSignoutClick()">登出</button>
         </div>
       </div>
@@ -85,7 +75,7 @@
         </div>
       </div>
 
-      <!-- 快速手動新增表單（經 Apps Script Webhook 寫入） -->
+      <!-- 快速手動新增表單 -->
       <div class="card">
         <h3 style="margin-top:0; margin-bottom:16px;">✍️ 快速手動新增記錄</h3>
         <form id="entry-form" onsubmit="handleFormSubmit(event)">
@@ -174,7 +164,7 @@
   </div>
 
   <script>
-    // 已全部預先綁定你的試算表 ID 及 Apps Script Webhook 網址
+    const CLIENT_ID = '86281111190-ehfhj4sc4ve16iq3bu16ovbhdbe5ot78.apps.googleusercontent.com';
     const SPREADSHEET_ID = '1WhufyrcY3t-X_7XoqpevEGQhua-ar9AHIxG01Napiho';
     const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwudHI5gZHzZf7WS9F9D4v8ZQ2jWrC-7lhCgEKIv2quXpiJPLZWYe0sYr93bz-QjAg/exec';
     const SECRET_TOKEN = 'Louis_Fit_2026_SecretKey_9988';
@@ -188,21 +178,8 @@
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
       document.getElementById('f-date').value = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
 
-      // 自動讀取瀏覽器已儲存的 Client ID
-      const savedClientId = localStorage.getItem('louis_fit_client_id') || '';
-      document.getElementById('client-id-input').value = savedClientId;
-    };
-
-    function handleAuthClick() {
-      const clientId = document.getElementById('client-id-input').value.trim();
-      if (!clientId || !clientId.includes('.apps.googleusercontent.com')) {
-        alert('請先貼上有效的 Google OAuth Client ID（結尾為 .apps.googleusercontent.com）');
-        return;
-      }
-      localStorage.setItem('louis_fit_client_id', clientId);
-
       tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
+        client_id: CLIENT_ID,
         scope: SCOPES,
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
@@ -213,11 +190,10 @@
           }
         },
       });
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    }
+    };
 
-    function resetClientId() {
-      handleSignoutClick();
+    function handleAuthClick() {
+      tokenClient.requestAccessToken({ prompt: 'consent' });
     }
 
     function handleSignoutClick() {
