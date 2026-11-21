@@ -75,6 +75,22 @@
       .quick-bar .full-m { grid-column: 1 / -1; }
     }
 
+    /* 專業圖表容器與分頁籤 */
+    .chart-tabs { display: flex; gap: 6px; flex-wrap: wrap; background: var(--input); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+    .chart-tab {
+      background: transparent; color: var(--muted); border: none; padding: 6px 12px;
+      border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.18s; white-space: nowrap;
+    }
+    .chart-tab:hover { color: var(--text); }
+    .chart-tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+    .chart-meta-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+    .chart-stage { position: relative; height: 290px; width: 100%; }
+    @media (max-width: 600px) {
+      .chart-stage { height: 250px; }
+      .chart-tabs { width: 100%; justify-content: space-between; }
+      .chart-tab { flex: 1; text-align: center; padding: 6px 6px; font-size: 11px; }
+    }
+
     /* 表單通用 */
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -87,7 +103,7 @@
     textarea { resize: vertical; line-height: 1.5; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
-    /* 彩色餐次膠囊標籤 (還原 Google Sheet 配搭) */
+    /* 彩色餐次膠囊標籤 */
     .badge {
       display: inline-block; padding: 3px 9px; border-radius: 999px;
       font-size: 11px; font-weight: 600; white-space: nowrap;
@@ -181,7 +197,7 @@
           <button class="btn btn-outline btn-sm" onclick="shiftViewDate(1)">▶</button>
           <button class="btn btn-outline btn-sm" onclick="jumpToToday()">今日</button>
         </div>
-        <div style="font-size:12px; color:var(--muted);">💡 提示：直接點擊下方圖表柱狀條即可跳轉該日</div>
+        <div style="font-size:12px; color:var(--muted);">💡 點擊下方圖表任一日即可切換檢視</div>
       </div>
 
       <!-- 5 張核心 KPI 卡片 -->
@@ -247,7 +263,7 @@
         </div>
       </div>
 
-      <!-- 智能 Upsert：快速更新步數與體重（自動合併入當日最後一餐，唔留垃圾行） -->
+      <!-- 智能 Upsert：快速更新步數與體重 -->
       <div class="card" style="padding: 14px 18px;">
         <form id="quick-metrics-form" class="quick-bar" onsubmit="handleQuickMetricsSubmit(event)">
           <div class="form-group full-m">
@@ -308,12 +324,14 @@
         </form>
       </div>
 
-      <!-- 雙模式互動圖表區（支援點擊柱狀條跳轉日期） -->
+      <!-- 4 視角專業互動圖表區（連續日曆軸 + 十字準星 + 全景 Tooltip） -->
       <div class="card">
-        <div class="section-header">
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm mode-btn active" data-mode="cal" onclick="setChartMode('cal')">🔥 熱量與餐費</button>
-            <button class="btn btn-outline btn-sm mode-btn" data-mode="weight" onclick="setChartMode('weight')">⚖️ 體重與 7 日均線</button>
+        <div class="section-header" style="margin-bottom: 10px;">
+          <div class="chart-tabs">
+            <button class="chart-tab mode-btn active" data-mode="cal" onclick="setChartMode('cal')">🔥 熱量構成</button>
+            <button class="chart-tab mode-btn" data-mode="weight" onclick="setChartMode('weight')">⚖️ 體重趨勢</button>
+            <button class="chart-tab mode-btn" data-mode="steps" onclick="setChartMode('steps')">🚶 步數達標</button>
+            <button class="chart-tab mode-btn" data-mode="cost" onclick="setChartMode('cost')">💰 餐飲開支</button>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-outline btn-sm range-btn" data-days="7" onclick="setChartRange(7)">近 7 日</button>
@@ -322,7 +340,13 @@
             <button class="btn btn-outline btn-sm range-btn" data-days="0" onclick="setChartRange(0)">全部</button>
           </div>
         </div>
-        <canvas id="mainChart" height="92" style="cursor:pointer;"></canvas>
+        <div class="chart-meta-bar">
+          <span id="chart-subtitle">以蛋白質 / 碳水 / 脂肪熱量堆疊，超過 2,000 kcal 自動紅框警示</span>
+          <span id="chart-period-summary" style="color:var(--text); font-weight:600;"></span>
+        </div>
+        <div class="chart-stage">
+          <canvas id="mainChart" style="cursor:pointer;"></canvas>
+        </div>
       </div>
 
       <!-- 飲食明細（桌面 Table + 手機 Card + 搜尋 + 當日聚焦 + 一鍵翻兜） -->
@@ -435,6 +459,7 @@
     const TARGET_STEPS = 9000;
 
     const MEAL_ORDER = { '早餐': 1, '午餐': 2, '下午茶': 3, '晚餐': 4, '宵夜': 5, '加餐/小食': 6, '飲品': 7, '': 8 };
+    const WEEKDAYS_HK = ['日', '一', '二', '三', '四', '五', '六'];
 
     const TOKEN_STORAGE_KEY = 'fit_dash_rw_token';
     const EXPIRY_STORAGE_KEY = 'fit_dash_rw_expiry';
@@ -442,16 +467,31 @@
     let tokenClient = null;
     let accessToken = null;
     let chartInstance = null;
-    let dailyLogSheetId = null; // 用於 deleteDimension 真・刪除整行
+    let dailyLogSheetId = null;
     let allParsedRows = [];
     let selectedViewDate = '';
     let chartRangeDays = 14;
-    let chartMode = 'cal'; // 'cal' | 'weight'
+    let chartMode = 'cal'; // 'cal' | 'weight' | 'steps' | 'cost'
     let dateSortDesc = true;
+    let currentTimelineDates = [];
 
     function getTodayISO() {
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
       return (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+    }
+
+    function addDaysISO(isoDate, delta) {
+      const d = new Date(isoDate + 'T00:00:00');
+      d.setDate(d.getDate() + delta);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      return (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10);
+    }
+
+    function formatShortDateLabel(isoDate) {
+      const d = new Date(isoDate + 'T00:00:00');
+      const mmdd = isoDate.slice(5).replace('-', '/');
+      const wk = WEEKDAYS_HK[d.getDay()];
+      return `${mmdd} (${wk})`;
     }
 
     function parseNum(val) {
@@ -482,6 +522,45 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => el.classList.add('hidden'), 3200);
     }
+
+    // TradingView 式十字準星與所選日期高亮底色帶 Plugin
+    const crosshairAndHighlightPlugin = {
+      id: 'crosshairAndHighlight',
+      beforeDatasetsDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea || !scales.x) return;
+        const selIdx = currentTimelineDates.indexOf(selectedViewDate);
+        if (selIdx >= 0) {
+          const xCenter = scales.x.getPixelForValue(selIdx);
+          const stepWidth = currentTimelineDates.length > 1
+            ? Math.abs(scales.x.getPixelForValue(1) - scales.x.getPixelForValue(0))
+            : 48;
+          const bandW = Math.min(48, Math.max(20, stepWidth * 0.78));
+          ctx.save();
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+          ctx.fillRect(xCenter - bandW / 2, chartArea.top, bandW, chartArea.bottom - chartArea.top);
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(xCenter - bandW / 2, chartArea.top, bandW, chartArea.bottom - chartArea.top);
+          ctx.restore();
+        }
+      },
+      afterDatasetsDraw(chart) {
+        const active = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+        if (!active || active.length === 0) return;
+        const { ctx, chartArea } = chart;
+        const x = active[0].element.x;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(248, 250, 252, 0.35)';
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
 
     function showDashboard() {
       document.getElementById('login-screen').classList.add('hidden');
@@ -575,7 +654,6 @@
       return data;
     }
 
-    // 智能 Upsert 更新步數與體重：優先覆蓋當日最後一行，避免產生多餘垃圾行
     async function handleQuickMetricsSubmit(e) {
       e.preventDefault();
       const dateVal = document.getElementById('qm-date').value;
@@ -594,7 +672,6 @@
       try {
         const dayRows = allParsedRows.filter(r => r.date === dateVal);
         if (dayRows.length > 0) {
-          // 搵當日最後一行作主載體
           const target = dayRows[dayRows.length - 1];
           const newSteps = stepsInput ? Math.round(Number(stepsInput)) : (target.steps || '');
           const newWeight = weightInput ? Number(weightInput) : (target.weight || '');
@@ -605,7 +682,6 @@
             newSteps, target.remarks, newWeight
           ]);
 
-          // 如果同日其他較早嘅行曾經填過舊步數/體重，順手清走避免重複干擾
           for (let i = 0; i < dayRows.length - 1; i++) {
             const r = dayRows[i];
             if ((stepsInput && r.steps > 0) || (weightInput && r.weight > 0)) {
@@ -618,7 +694,6 @@
             }
           }
         } else {
-          // 當日仲未有任何飲食紀錄，先獨立新增一行
           await appendRowToSheet([
             dateVal, '', '📊 步數/體重記錄',
             0, 0, 0, 0, 0,
@@ -643,7 +718,6 @@
       }
     }
 
-    // 一鍵「翻兜」常食餐單落所選日期（或今日）
     async function quickCloneMeal(rowNum) {
       const src = allParsedRows.find(r => r.rowNum === rowNum);
       if (!src) return;
@@ -769,10 +843,7 @@
     }
 
     function shiftViewDate(deltaDays) {
-      const d = new Date(selectedViewDate + 'T00:00:00');
-      d.setDate(d.getDate() + deltaDays);
-      const tzOffset = d.getTimezoneOffset() * 60000;
-      setSelectedDate((new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10));
+      setSelectedDate(addDaysISO(selectedViewDate, deltaDays));
     }
 
     function onViewDateChange() {
@@ -800,22 +871,62 @@
       renderAll();
     }
 
+    // 建立連續不間斷日曆軸，解決漏記或單日數據變成「大磚頭」或斷層問題
+    function buildContinuousTimeline(recordedDates) {
+      const todayISO = getTodayISO();
+      const maxRecorded = recordedDates.length > 0 ? recordedDates[recordedDates.length - 1] : todayISO;
+      const endAnchor = maxRecorded > todayISO ? maxRecorded : todayISO;
+
+      if (chartRangeDays > 0) {
+        const list = [];
+        for (let i = chartRangeDays - 1; i >= 0; i--) {
+          list.push(addDaysISO(endAnchor, -i));
+        }
+        return list;
+      }
+
+      if (recordedDates.length === 0) {
+        const fallback = [];
+        for (let i = 6; i >= 0; i--) fallback.push(addDaysISO(todayISO, -i));
+        return fallback;
+      }
+
+      let startAnchor = recordedDates[0];
+      // 若「全部」模式下總跨度少於 7 日，自動向前補齊至最少 7 日，保持視覺比例優雅
+      const minStart = addDaysISO(endAnchor, -6);
+      if (startAnchor > minStart) startAnchor = minStart;
+
+      const list = [];
+      let cur = startAnchor;
+      while (cur <= endAnchor) {
+        list.push(cur);
+        cur = addDaysISO(cur, 1);
+      }
+      return list;
+    }
+
     function renderAll() {
       let totalCost = 0;
       const dailyMap = {};
 
       allParsedRows.forEach(r => {
         totalCost += r.cost;
-        if (!dailyMap[r.date]) dailyMap[r.date] = { cal: 0, cost: 0, weight: 0 };
+        if (!dailyMap[r.date]) {
+          dailyMap[r.date] = { cal: 0, pro: 0, carb: 0, fat: 0, steps: 0, cost: 0, weight: 0 };
+        }
         dailyMap[r.date].cal += r.cal;
+        dailyMap[r.date].pro += r.pro;
+        dailyMap[r.date].carb += r.carb;
+        dailyMap[r.date].fat += r.fat;
         dailyMap[r.date].cost += r.cost;
+        if (r.steps > dailyMap[r.date].steps) dailyMap[r.date].steps = r.steps;
         if (r.weight > 0) dailyMap[r.date].weight = r.weight;
       });
 
-      const allDates = Object.keys(dailyMap).sort();
+      const allRecordedDates = Object.keys(dailyMap).sort();
 
-      // 計算 7 日移動平均體重
-      const weightDates = allDates.filter(d => dailyMap[d].weight > 0);
+      // 計算有磅重日子嘅 7 次移動平均線
+      const weightDates = allRecordedDates.filter(d => dailyMap[d].weight > 0);
       const weightMA7 = {};
       weightDates.forEach((d, idx) => {
         const windowSlice = weightDates.slice(Math.max(0, idx - 6), idx + 1);
@@ -823,76 +934,66 @@
         weightMA7[d] = Number(avg.toFixed(2));
       });
 
-      // 計算所選日期 KPI
-      let dayCal = 0, dayPro = 0, dayCarb = 0, dayFat = 0, daySteps = 0, dayCost = 0, dayWeight = 0;
-      allParsedRows.filter(r => r.date === selectedViewDate).forEach(r => {
-        dayCal += r.cal;
-        dayPro += r.pro;
-        dayCarb += r.carb;
-        dayFat += r.fat;
-        dayCost += r.cost;
-        if (r.steps > daySteps) daySteps = r.steps;
-        if (r.weight > 0) dayWeight = r.weight;
-      });
+      const dStat = dailyMap[selectedViewDate] || { cal: 0, pro: 0, carb: 0, fat: 0, steps: 0, cost: 0, weight: 0 };
 
       // 熱量 KPI
       const kpiCalEl = document.getElementById('kpi-cal');
       const barCalEl = document.getElementById('bar-cal');
-      kpiCalEl.innerText = `${Math.round(dayCal).toLocaleString()} kcal`;
-      const calDiff = Math.round(TARGET_CAL - dayCal);
+      kpiCalEl.innerText = `${Math.round(dStat.cal).toLocaleString()} kcal`;
+      const calDiff = Math.round(TARGET_CAL - dStat.cal);
       kpiCalEl.style.color = calDiff < 0 ? 'var(--danger)' : 'var(--accent)';
-      barCalEl.style.width = `${Math.min(100, (dayCal / TARGET_CAL) * 100)}%`;
+      barCalEl.style.width = `${Math.min(100, (dStat.cal / TARGET_CAL) * 100)}%`;
       barCalEl.style.background = calDiff < 0 ? 'var(--danger)' : 'var(--accent)';
       document.getElementById('sub-cal').innerText = calDiff >= 0 ? `剩餘額度：${calDiff.toLocaleString()} kcal` : `⚠️ 超標 ${Math.abs(calDiff).toLocaleString()} kcal`;
       document.getElementById('sub-cal').style.color = calDiff < 0 ? 'var(--danger)' : 'var(--muted)';
 
       // 蛋白質 KPI
-      document.getElementById('kpi-pro').innerText = `${Math.round(dayPro)} g`;
-      document.getElementById('bar-pro').style.width = `${Math.min(100, (dayPro / TARGET_PRO) * 100)}%`;
-      const proDiff = Math.round(TARGET_PRO - dayPro);
+      document.getElementById('kpi-pro').innerText = `${Math.round(dStat.pro)} g`;
+      document.getElementById('bar-pro').style.width = `${Math.min(100, (dStat.pro / TARGET_PRO) * 100)}%`;
+      const proDiff = Math.round(TARGET_PRO - dStat.pro);
       document.getElementById('sub-pro').innerText = proDiff > 0 ? `差 ${proDiff} g 達標` : `✅ 已達標 (+${Math.abs(proDiff)} g)`;
 
       // 步數 KPI
-      document.getElementById('kpi-steps').innerText = daySteps.toLocaleString();
-      document.getElementById('bar-steps').style.width = `${Math.min(100, (daySteps / TARGET_STEPS) * 100)}%`;
-      const stepsDiff = TARGET_STEPS - daySteps;
+      document.getElementById('kpi-steps').innerText = dStat.steps.toLocaleString();
+      document.getElementById('bar-steps').style.width = `${Math.min(100, (dStat.steps / TARGET_STEPS) * 100)}%`;
+      const stepsDiff = TARGET_STEPS - dStat.steps;
       document.getElementById('sub-steps').innerText = stepsDiff > 0 ? `差 ${stepsDiff.toLocaleString()} 步達標` : `✅ 已達標 (+${Math.abs(stepsDiff).toLocaleString()} 步)`;
 
-      // 體重 KPI（如當日未磅重，顯示最近一次體重作參考）
+      // 體重 KPI
       const latestWeightDate = weightDates.filter(d => d <= selectedViewDate).pop() || weightDates[weightDates.length - 1];
-      if (dayWeight > 0) {
-        document.getElementById('kpi-weight').innerText = `${dayWeight.toFixed(1)} kg`;
+      if (dStat.weight > 0) {
+        document.getElementById('kpi-weight').innerText = `${dStat.weight.toFixed(1)} kg`;
         document.getElementById('sub-weight').innerText = `7日均線：${weightMA7[selectedViewDate]} kg`;
       } else if (latestWeightDate) {
         document.getElementById('kpi-weight').innerText = `${dailyMap[latestWeightDate].weight.toFixed(1)} kg`;
-        document.getElementById('sub-weight').innerText = `最近紀錄 (${latestWeightDate})｜均線 ${weightMA7[latestWeightDate]} kg`;
+        document.getElementById('sub-weight').innerText = `最近 (${latestWeightDate.slice(5)})｜均線 ${weightMA7[latestWeightDate]} kg`;
       } else {
         document.getElementById('kpi-weight').innerText = `- kg`;
         document.getElementById('sub-weight').innerText = `喺下方輸入體重開啟趨勢線`;
       }
 
       // 花費 KPI
-      const costDaysCount = allDates.filter(d => dailyMap[d].cal > 0 || dailyMap[d].cost > 0).length || 1;
-      const avgCost = Math.round(totalCost / costDaysCount);
-      document.getElementById('kpi-cost').innerText = `$${Math.round(dayCost).toLocaleString()}`;
-      document.getElementById('sub-cost').innerText = `累積：$${Math.round(totalCost).toLocaleString()}｜日均：$${avgCost}`;
+      const activeFoodDays = allRecordedDates.filter(d => dailyMap[d].cal > 0 || dailyMap[d].cost > 0).length || 1;
+      const avgCost = Math.round(totalCost / activeFoodDays);
+      document.getElementById('kpi-cost').innerText = `$${Math.round(dStat.cost).toLocaleString()}`;
+      document.getElementById('sub-cost').innerText = `累積：$${Math.round(totalCost).toLocaleString()}｜有紀錄日均：$${avgCost}`;
 
       // 三大營養素比例條
-      const proKcal = dayPro * 4, carbKcal = dayCarb * 4, fatKcal = dayFat * 9;
+      const proKcal = dStat.pro * 4, carbKcal = dStat.carb * 4, fatKcal = dStat.fat * 9;
       const macroKcalSum = proKcal + carbKcal + fatKcal;
       const proPct = macroKcalSum > 0 ? Math.round((proKcal / macroKcalSum) * 100) : 0;
       const carbPct = macroKcalSum > 0 ? Math.round((carbKcal / macroKcalSum) * 100) : 0;
       const fatPct = macroKcalSum > 0 ? Math.max(0, 100 - proPct - carbPct) : 0;
 
-      document.getElementById('macro-total-g').innerText = `總克數：${Math.round(dayPro + dayCarb + dayFat)}g`;
+      document.getElementById('macro-total-g').innerText = `總克數：${Math.round(dStat.pro + dStat.carb + dStat.fat)}g`;
       document.getElementById('m-bar-pro').style.width = `${proPct}%`;
       document.getElementById('m-bar-carb').style.width = `${carbPct}%`;
       document.getElementById('m-bar-fat').style.width = `${fatPct}%`;
-      document.getElementById('m-pro-txt').innerText = `${Math.round(dayPro)}g (${proPct}%)`;
-      document.getElementById('m-carb-txt').innerText = `${Math.round(dayCarb)}g (${carbPct}%)`;
-      document.getElementById('m-fat-txt').innerText = `${Math.round(dayFat)}g (${fatPct}%)`;
+      document.getElementById('m-pro-txt').innerText = `${Math.round(dStat.pro)}g (${proPct}%)`;
+      document.getElementById('m-carb-txt').innerText = `${Math.round(dStat.carb)}g (${carbPct}%)`;
+      document.getElementById('m-fat-txt').innerText = `${Math.round(dStat.fat)}g (${fatPct}%)`;
 
-      // 明細過濾（搜尋 + 只睇所選日期 + 隱藏純步數/體重行）
+      // 明細過濾
       const showSteps = document.getElementById('show-step-rows').checked;
       const onlySelected = document.getElementById('only-selected-date').checked;
       const keyword = document.getElementById('search-box').value.trim().toLowerCase();
@@ -924,10 +1025,10 @@
 
       const displayRows = filteredRows.slice(0, 60);
 
-      // 桌面版 Table 渲染
+      // 桌面版 Table
       const tbody = document.getElementById('log-table-body');
       tbody.innerHTML = displayRows.map(r => `
-        <tr style="${r.date === selectedViewDate ? 'background: rgba(56, 189, 248, 0.04);' : ''}">
+        <tr style="${r.date === selectedViewDate ? 'background: rgba(56, 189, 248, 0.05);' : ''}">
           <td style="white-space:nowrap; cursor:pointer;" onclick="setSelectedDate('${r.date}')" title="點擊檢視該日">${r.date}</td>
           <td style="white-space:nowrap;">${getMealBadge(r.meal)}</td>
           <td>${escapeHtml(r.food)}</td>
@@ -946,7 +1047,7 @@
         </tr>
       `).join('');
 
-      // 手機版 Card 渲染
+      // 手機版 Card
       const mobileContainer = document.getElementById('mobile-cards-container');
       mobileContainer.innerHTML = displayRows.map(r => `
         <div class="m-card" style="${r.date === selectedViewDate ? 'border-color: rgba(56, 189, 248, 0.45);' : ''}">
@@ -972,109 +1073,367 @@
         </div>
       `).join('');
 
-      renderChart(allDates, dailyMap, weightDates, weightMA7);
+      renderProfessionalChart(allRecordedDates, dailyMap, weightMA7);
     }
 
-    function renderChart(allDates, dailyMap, weightDates, weightMA7) {
+    function renderProfessionalChart(allRecordedDates, dailyMap, weightMA7) {
       const ctx = document.getElementById('mainChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
-      if (chartMode === 'weight') {
-        const wDates = chartRangeDays > 0 ? weightDates.slice(-chartRangeDays) : weightDates;
-        chartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: wDates,
-            datasets: [
-              {
-                label: '當日體重 (kg)',
-                data: wDates.map(d => dailyMap[d].weight),
-                borderColor: 'rgba(167, 139, 250, 0.55)',
-                backgroundColor: '#a78bfa',
-                pointRadius: wDates.map(d => d === selectedViewDate ? 7 : 4),
-                pointBorderColor: wDates.map(d => d === selectedViewDate ? '#fff' : '#a78bfa'),
-                borderDash: [3, 3],
-                tension: 0.2
-              },
-              {
-                label: '7 日移動平均線 (kg)',
-                data: wDates.map(d => weightMA7[d]),
-                borderColor: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                borderWidth: 3,
-                pointRadius: 0,
-                fill: true,
-                tension: 0.35
-              }
-            ]
+      currentTimelineDates = buildContinuousTimeline(allRecordedDates);
+      const shortLabels = currentTimelineDates.map(formatShortDateLabel);
+
+      const subtitleEl = document.getElementById('chart-subtitle');
+      const summaryEl = document.getElementById('chart-period-summary');
+
+      // 全景 Tooltip：無論處於邊個 Tab，滑鼠掃過都一次過睇晒當日完整成績表
+      const commonTooltip = {
+        backgroundColor: 'rgba(15, 23, 42, 0.96)',
+        titleColor: '#f8fafc',
+        bodyColor: '#cbd5e1',
+        borderColor: '#475569',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          title: (items) => {
+            if (!items.length) return '';
+            const iso = currentTimelineDates[items[0].dataIndex];
+            const d = new Date(iso + 'T00:00:00');
+            return `📅 ${iso} (星期${WEEKDAYS_HK[d.getDay()]})`;
           },
+          afterBody: (items) => {
+            if (!items.length) return [];
+            const iso = currentTimelineDates[items[0].dataIndex];
+            const st = dailyMap[iso];
+            if (!st) return ['（當日尚無紀錄）'];
+            const diff = Math.round(st.cal - TARGET_CAL);
+            const diffTxt = diff > 0 ? `+${diff} 超標` : `${diff} 達標`;
+            const lines = [
+              '──────────────────',
+              `🔥 總熱量：${Math.round(st.cal).toLocaleString()} kcal (${diffTxt})`,
+              `🥗 營養素：P ${Math.round(st.pro)}g ｜ C ${Math.round(st.carb)}g ｜ F ${Math.round(st.fat)}g`,
+              `🚶 步 數：${st.steps > 0 ? st.steps.toLocaleString() + ' 步' : '未記錄'}`,
+              `💰 餐 費：$${Math.round(st.cost).toLocaleString()}`
+            ];
+            if (st.weight > 0) lines.push(`⚖️ 體 重：${st.weight.toFixed(1)} kg`);
+            return lines;
+          }
+        }
+      };
+
+      const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        onClick: (evt, elements) => {
+          if (elements.length > 0) {
+            setSelectedDate(currentTimelineDates[elements[0].index]);
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'start',
+            labels: { color: '#cbd5e1', boxWidth: 12, boxHeight: 12, useBorderRadius: true, borderRadius: 3, font: { size: 12 } }
+          },
+          tooltip: commonTooltip
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: (c) => currentTimelineDates[c.index] === selectedViewDate ? '#38bdf8' : '#94a3b8',
+              font: (c) => ({ size: 11, weight: currentTimelineDates[c.index] === selectedViewDate ? '700' : '400' }),
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: window.innerWidth < 600 ? 6 : 14
+            }
+          }
+        }
+      };
+
+      // 視角 1：熱量與三大營養素構成（Stacked Bar + 2,000 kcal 警戒線）
+      if (chartMode === 'cal') {
+        const activeInView = currentTimelineDates.filter(d => dailyMap[d] && dailyMap[d].cal > 0);
+        const avgCal = activeInView.length > 0
+          ? Math.round(activeInView.reduce((s, d) => s + dailyMap[d].cal, 0) / activeInView.length)
+          : 0;
+        subtitleEl.innerText = '以蛋白質 / 碳水 / 脂肪熱量堆疊；超標 2,000 kcal 日子頂部紅框標示';
+        summaryEl.innerText = activeInView.length > 0 ? `區間日均攝取：${avgCal.toLocaleString()} kcal` : '區間尚無飲食紀錄';
+
+        const pData = [], cData = [], fData = [], otherData = [], overFlags = [];
+        currentTimelineDates.forEach(d => {
+          const st = dailyMap[d];
+          if (!st || st.cal === 0) {
+            pData.push(0); cData.push(0); fData.push(0); otherData.push(0); overFlags.push(false);
+            return;
+          }
+          const pk = Math.round(st.pro * 4);
+          const ck = Math.round(st.carb * 4);
+          const fk = Math.round(st.fat * 9);
+          const mSum = pk + ck + fk;
+          if (mSum === 0) {
+            pData.push(0); cData.push(0); fData.push(0); otherData.push(Math.round(st.cal));
+          } else {
+            // 按比例對齊實際總卡路里，確保堆疊總高度 100% 等於當日輸入熱量
+            const ratio = st.cal / mSum;
+            pData.push(Math.round(pk * ratio));
+            cData.push(Math.round(ck * ratio));
+            fData.push(Math.max(0, Math.round(st.cal) - Math.round(pk * ratio) - Math.round(ck * ratio)));
+            otherData.push(0);
+          }
+          overFlags.push(st.cal > TARGET_CAL);
+        });
+
+        const datasets = [
+          {
+            label: '2,000 kcal 目標線',
+            data: currentTimelineDates.map(() => TARGET_CAL),
+            type: 'line',
+            borderColor: 'rgba(248, 250, 252, 0.7)',
+            borderWidth: 1.8,
+            borderDash: [6, 5],
+            pointRadius: 0,
+            fill: false,
+            order: 0
+          },
+          {
+            label: '蛋白質 kcal',
+            data: pData,
+            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+            stack: 'calStack',
+            maxBarThickness: 32,
+            order: 1
+          },
+          {
+            label: '碳水 kcal',
+            data: cData,
+            backgroundColor: 'rgba(56, 189, 248, 0.85)',
+            stack: 'calStack',
+            maxBarThickness: 32,
+            order: 1
+          },
+          {
+            label: '脂肪 kcal',
+            data: fData,
+            backgroundColor: 'rgba(251, 191, 36, 0.85)',
+            borderColor: overFlags.map(isOver => isOver ? '#ef4444' : 'transparent'),
+            borderWidth: overFlags.map(isOver => isOver ? 2 : 0),
+            borderRadius: { topLeft: 5, topRight: 5 },
+            stack: 'calStack',
+            maxBarThickness: 32,
+            order: 1
+          }
+        ];
+
+        if (otherData.some(v => v > 0)) {
+          datasets.push({
+            label: '未分類熱量 kcal',
+            data: otherData,
+            backgroundColor: 'rgba(148, 163, 184, 0.7)',
+            borderRadius: { topLeft: 5, topRight: 5 },
+            stack: 'calStack',
+            maxBarThickness: 32,
+            order: 1
+          });
+        }
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          plugins: [crosshairAndHighlightPlugin],
+          data: { labels: shortLabels, datasets },
           options: {
-            responsive: true,
-            onClick: (evt, elements) => {
-              if (elements.length > 0) setSelectedDate(wDates[elements[0].index]);
-            },
+            ...baseOptions,
             scales: {
-              y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-              x: { ticks: { color: '#94a3b8' } }
-            },
-            plugins: { legend: { labels: { color: '#f8fafc' } } }
+              ...baseOptions.scales,
+              x: { ...baseOptions.scales.x, stacked: true },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                suggestedMax: 2400,
+                ticks: { color: '#94a3b8', callback: v => v.toLocaleString() },
+                grid: { color: 'rgba(51, 65, 85, 0.55)' }
+              }
+            }
           }
         });
         return;
       }
 
-      const chartDates = chartRangeDays > 0 ? allDates.slice(-chartRangeDays) : allDates;
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: chartDates,
-          datasets: [
-            {
-              label: '每日總熱量 (kcal)',
-              data: chartDates.map(d => dailyMap[d].cal),
-              backgroundColor: chartDates.map(d =>
-                dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.8)' : 'rgba(16, 185, 129, 0.78)'
-              ),
-              borderColor: chartDates.map(d => d === selectedViewDate ? '#f8fafc' : 'transparent'),
-              borderWidth: chartDates.map(d => d === selectedViewDate ? 2.5 : 0),
-              maxBarThickness: 46,
-              borderRadius: 6,
-              yAxisID: 'y'
-            },
-            {
-              label: '2,000 kcal 目標線',
-              data: chartDates.map(() => TARGET_CAL),
-              type: 'line',
-              borderColor: '#94a3b8',
-              borderDash: [5, 5],
-              pointRadius: 0,
-              fill: false,
-              yAxisID: 'y'
-            },
-            {
-              label: '每日餐費 (HKD)',
-              data: chartDates.map(d => dailyMap[d].cost),
-              type: 'line',
-              borderColor: '#fbbf24',
-              backgroundColor: '#fbbf24',
-              tension: 0.25,
-              yAxisID: 'y1'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          onClick: (evt, elements) => {
-            if (elements.length > 0) setSelectedDate(chartDates[elements[0].index]);
-          },
-          scales: {
-            y: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-            y1: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#fbbf24' }, grid: { drawOnChartArea: false } },
-            x: { ticks: { color: '#94a3b8' } }
-          },
-          plugins: { legend: { labels: { color: '#f8fafc' } } }
+      // 視角 2：體重趨勢（動態鎖定黃金縮放區間 + spanGaps 自動連貫）
+      if (chartMode === 'weight') {
+        const wVals = currentTimelineDates.map(d => (dailyMap[d] && dailyMap[d].weight > 0) ? dailyMap[d].weight : null);
+        const maVals = currentTimelineDates.map(d => weightMA7[d] || null);
+        const validWeights = wVals.filter(v => v !== null);
+
+        subtitleEl.innerText = '紫色圓點為真實磅重，藍色曲線為 7 日平滑均線（自動跨越未磅重日子）';
+        if (validWeights.length >= 2) {
+          const delta = (validWeights[validWeights.length - 1] - validWeights[0]).toFixed(1);
+          summaryEl.innerText = `區間體重變化：${delta > 0 ? '+' + delta : delta} kg`;
+        } else if (validWeights.length === 1) {
+          summaryEl.innerText = `目前體重：${validWeights[0].toFixed(1)} kg`;
+        } else {
+          summaryEl.innerText = '請先於上方輸入今日體重 (kg)';
         }
-      });
+
+        const minW = validWeights.length > 0 ? Math.floor((Math.min(...validWeights) - 1.2) * 2) / 2 : 60;
+        const maxW = validWeights.length > 0 ? Math.ceil((Math.max(...validWeights) + 1.2) * 2) / 2 : 80;
+
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          plugins: [crosshairAndHighlightPlugin],
+          data: {
+            labels: shortLabels,
+            datasets: [
+              {
+                label: '當日體重 (kg)',
+                data: wVals,
+                borderColor: 'rgba(167, 139, 250, 0.65)',
+                backgroundColor: '#a78bfa',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                spanGaps: true,
+                tension: 0.25
+              },
+              {
+                label: '7 日移動平均 (kg)',
+                data: maVals,
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.14)',
+                borderWidth: 3,
+                pointRadius: 0,
+                fill: true,
+                spanGaps: true,
+                tension: 0.35
+              }
+            ]
+          },
+          options: {
+            ...baseOptions,
+            scales: {
+              ...baseOptions.scales,
+              y: {
+                min: minW,
+                max: maxW,
+                ticks: { color: '#94a3b8', callback: v => `${v} kg` },
+                grid: { color: 'rgba(51, 65, 85, 0.55)' }
+              }
+            }
+          }
+        });
+        return;
+      }
+
+      // 視角 3：步數達標柱狀圖（9,000 步目標線）
+      if (chartMode === 'steps') {
+        const sVals = currentTimelineDates.map(d => dailyMap[d] ? dailyMap[d].steps : 0);
+        const activeStepDays = sVals.filter(v => v > 0);
+        const avgSteps = activeStepDays.length > 0
+          ? Math.round(activeStepDays.reduce((a, b) => a + b, 0) / activeStepDays.length)
+          : 0;
+        const hitDays = sVals.filter(v => v >= TARGET_STEPS).length;
+
+        subtitleEl.innerText = '達標 9,000 步自動亮起青綠色，未達標顯示暗灰藍色';
+        summaryEl.innerText = activeStepDays.length > 0
+          ? `區間日均：${avgSteps.toLocaleString()} 步｜達標 ${hitDays} 日`
+          : '區間尚無步數紀錄';
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          plugins: [crosshairAndHighlightPlugin],
+          data: {
+            labels: shortLabels,
+            datasets: [
+              {
+                label: '9,000 步目標線',
+                data: currentTimelineDates.map(() => TARGET_STEPS),
+                type: 'line',
+                borderColor: 'rgba(56, 189, 248, 0.8)',
+                borderWidth: 1.8,
+                borderDash: [6, 5],
+                pointRadius: 0,
+                fill: false,
+                order: 0
+              },
+              {
+                label: '當日步數',
+                data: sVals,
+                backgroundColor: sVals.map(v => v >= TARGET_STEPS ? 'rgba(16, 185, 129, 0.85)' : 'rgba(100, 116, 139, 0.55)'),
+                borderRadius: 6,
+                maxBarThickness: 32,
+                order: 1
+              }
+            ]
+          },
+          options: {
+            ...baseOptions,
+            scales: {
+              ...baseOptions.scales,
+              y: {
+                beginAtZero: true,
+                suggestedMax: 11000,
+                ticks: { color: '#94a3b8', callback: v => v.toLocaleString() },
+                grid: { color: 'rgba(51, 65, 85, 0.55)' }
+              }
+            }
+          }
+        });
+        return;
+      }
+
+      // 視角 4：餐飲開支追蹤（每日餐費柱 + 區間日均線）
+      if (chartMode === 'cost') {
+        const costVals = currentTimelineDates.map(d => dailyMap[d] ? Math.round(dailyMap[d].cost) : 0);
+        const activeCostVals = costVals.filter(v => v > 0);
+        const periodSum = costVals.reduce((a, b) => a + b, 0);
+        const periodAvg = activeCostVals.length > 0 ? Math.round(periodSum / activeCostVals.length) : 0;
+
+        subtitleEl.innerText = '獨立檢視每日餐飲消費金額，虛線為有消費日子嘅平均餐費';
+        summaryEl.innerText = `區間總計：$${periodSum.toLocaleString()}｜日均：$${periodAvg.toLocaleString()}`;
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          plugins: [crosshairAndHighlightPlugin],
+          data: {
+            labels: shortLabels,
+            datasets: [
+              {
+                label: `日均參考線 ($${periodAvg})`,
+                data: currentTimelineDates.map(() => periodAvg),
+                type: 'line',
+                borderColor: 'rgba(248, 250, 252, 0.6)',
+                borderWidth: 1.6,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+                order: 0
+              },
+              {
+                label: '每日餐費 (HKD)',
+                data: costVals,
+                backgroundColor: costVals.map(v => v > periodAvg * 1.3 && periodAvg > 0 ? 'rgba(249, 115, 22, 0.85)' : 'rgba(251, 191, 36, 0.82)'),
+                borderRadius: 6,
+                maxBarThickness: 32,
+                order: 1
+              }
+            ]
+          },
+          options: {
+            ...baseOptions,
+            scales: {
+              ...baseOptions.scales,
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#fbbf24', callback: v => `$${v}` },
+                grid: { color: 'rgba(51, 65, 85, 0.55)' }
+              }
+            }
+          }
+        });
+      }
     }
 
     function openEditModal(rowNum) {
@@ -1134,7 +1493,6 @@
       }
     }
 
-    // 真・連根拔起刪除整行 (deleteDimension)，唔留空白行
     async function handleDeleteRow() {
       const rowNum = Number(document.getElementById('e-row').value);
       if (!confirm('確定要徹底刪除此行記錄嗎？（下方資料會自動向上補位，唔留空白行）')) return;
