@@ -7,34 +7,47 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --blue: #38bdf8; --warn: #fbbf24; --danger: #ef4444; --border: #334155; }
+    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --blue: #38bdf8; --warn: #fbbf24; --danger: #ef4444; --purple: #a78bfa; --border: #334155; }
     * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    .container { max-width: 1050px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    .btn { background: var(--accent); color: #052e16; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; white-space: nowrap; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; }
+    .container { max-width: 1080px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+    .btn { background: var(--accent); color: #052e16; border: none; padding: 9px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; transition: opacity 0.2s; white-space: nowrap; }
     .btn:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-blue { background: var(--blue); color: #082f49; }
+    .btn-danger { background: var(--danger); color: #fff; }
     .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
-    .card-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
-    .card-value { font-size: 26px; font-weight: 700; color: var(--accent); }
-    .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 10px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
-    .quick-steps-bar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .btn-outline.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .date-nav { display: flex; align-items: center; gap: 8px; background: var(--card); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
+    .date-nav input[type="date"] { width: auto; padding: 6px 10px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .card { background: var(--card); padding: 18px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .card-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .card-value { font-size: 25px; font-weight: 700; color: var(--accent); }
+    .card-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 8px; overflow: hidden; display: flex; }
+    .progress-fill { height: 100%; background: var(--accent); transition: width 0.35s ease; }
+    .macro-bar { height: 10px; border-radius: 999px; overflow: hidden; display: flex; background: var(--input); margin: 10px 0 8px; }
+    .macro-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .quick-steps-bar { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-group label { font-size: 12px; color: var(--muted); }
-    input, select { background: var(--input); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; width: 100%; }
+    input, select { background: var(--input); border: 1px solid var(--border); color: var(--text); padding: 9px 11px; border-radius: 8px; font-size: 14px; width: 100%; }
     input:focus, select:focus { outline: none; border-color: var(--accent); }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; }
-    #login-screen { text-align: center; padding: 70px 20px; max-width: 480px; margin: 60px auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+    #login-screen { text-align: center; padding: 60px 20px; max-width: 460px; margin: 60px auto; }
     .hidden { display: none !important; }
     .status-msg { font-size: 13px; margin-left: 8px; color: var(--accent); }
+    .section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+    .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -42,72 +55,100 @@
     <!-- 登入畫面 -->
     <div id="login-screen" class="card">
       <h2 style="margin-top:0;">🔒 私人減肥與餐飲理財 Dashboard</h2>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 28px;">已綁定「2026 減肥 Daily Log」及安全寫入通道</p>
-      <button class="btn" style="width:100%; padding:14px; font-size:15px;" onclick="handleAuthClick()">使用 Google 帳號登入</button>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">已綁定「2026 減肥 Daily Log」（支援安全讀寫與直接編輯）</p>
+      <button class="btn" style="width:100%; padding:13px; font-size:15px;" onclick="handleAuthClick()">使用 Google 帳號登入</button>
     </div>
 
     <!-- 主儀表板 -->
     <div id="dashboard" class="hidden">
       <div class="header">
         <div>
-          <h2 style="margin:0;">📊 2026 減肥與開支追蹤</h2>
+          <h2 style="margin:0; font-size:20px;">📊 2026 減肥與開支追蹤</h2>
           <span style="font-size:12px; color:var(--muted);" id="last-updated">資料同步中...</span>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn" onclick="fetchSheetData()">🔄 重新整理</button>
+          <button class="btn btn-outline" id="toggle-add-btn" onclick="toggleAddForm()">✍️ 手動新增飲食</button>
+          <button class="btn" onclick="fetchSheetData()">🔄 同步</button>
           <button class="btn btn-outline" onclick="handleSignoutClick()">登出</button>
         </div>
+      </div>
+
+      <!-- 日期切換列 -->
+      <div class="date-nav">
+        <span style="font-size:13px; color:var(--muted);">檢視日期：</span>
+        <button class="btn btn-outline btn-sm" onclick="shiftViewDate(-1)">◀ 前一日</button>
+        <input type="date" id="view-date-picker" onchange="onViewDateChange()" />
+        <button class="btn btn-outline btn-sm" onclick="shiftViewDate(1)">後一日 ▶</button>
+        <button class="btn btn-outline btn-sm" onclick="jumpToToday()">今日</button>
       </div>
 
       <!-- KPI 卡片 -->
       <div class="grid" style="margin-bottom:0;">
         <div class="card">
-          <div class="card-title"><span>攝取熱量</span><span id="target-date-label">目標 2,000</span></div>
+          <div class="card-title"><span>當日攝取熱量</span><span>目標 2,000</span></div>
           <div class="card-value" id="kpi-cal">- kcal</div>
           <div class="progress-bg"><div class="progress-fill" id="bar-cal" style="width:0%;"></div></div>
+          <div class="card-sub" id="sub-cal">-</div>
         </div>
         <div class="card">
-          <div class="card-title"><span>蛋白質</span><span>目標 140g</span></div>
+          <div class="card-title"><span>當日蛋白質</span><span>目標 140g</span></div>
           <div class="card-value" id="kpi-pro">- g</div>
           <div class="progress-bg"><div class="progress-fill" id="bar-pro" style="width:0%;"></div></div>
+          <div class="card-sub" id="sub-pro">-</div>
         </div>
         <div class="card">
-          <div class="card-title"><span>步數</span><span>目標 9,000</span></div>
+          <div class="card-title"><span>當日步數</span><span>目標 9,000</span></div>
           <div class="card-value" id="kpi-steps">-</div>
           <div class="progress-bg"><div class="progress-fill" id="bar-steps" style="width:0%;"></div></div>
+          <div class="card-sub" id="sub-steps">-</div>
         </div>
         <div class="card">
-          <div class="card-title"><span>累積餐飲總花費</span><span>HKD</span></div>
+          <div class="card-title"><span>當日 / 累積餐費</span><span>HKD</span></div>
           <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
-          <div style="font-size:12px; color:var(--muted); margin-top:8px;" id="avg-daily-cost">日均餐費：$0</div>
+          <div class="card-sub" id="sub-cost">累積：$0｜日均：$0</div>
+        </div>
+      </div>
+
+      <!-- 三大營養素比例條 -->
+      <div class="card" style="padding: 14px 18px;">
+        <div class="card-title" style="margin-bottom:0;"><span>當日三大營養素分佈（按熱量佔比）</span><span id="macro-total-g">0g</span></div>
+        <div class="macro-bar">
+          <div id="m-bar-pro" style="background:var(--accent); width:0%;"></div>
+          <div id="m-bar-carb" style="background:var(--blue); width:0%;"></div>
+          <div id="m-bar-fat" style="background:var(--warn); width:0%;"></div>
+        </div>
+        <div class="macro-legend">
+          <span><span class="dot" style="background:var(--accent);"></span>蛋白質：<strong id="m-pro-txt">0g (0%)</strong></span>
+          <span><span class="dot" style="background:var(--blue);"></span>碳水：<strong id="m-carb-txt">0g (0%)</strong></span>
+          <span><span class="dot" style="background:var(--warn);"></span>脂肪：<strong id="m-fat-txt">0g (0%)</strong></span>
         </div>
       </div>
 
       <!-- 獨立快速更新步數區塊 -->
-      <div class="card" style="padding: 16px 20px;">
+      <div class="card" style="padding: 14px 18px;">
         <form id="quick-steps-form" class="quick-steps-bar" onsubmit="handleQuickStepsSubmit(event)">
-          <div class="form-group" style="flex: 0 0 160px;">
+          <div class="form-group" style="flex: 0 0 150px;">
             <label>🚶 快速更新步數（日期）</label>
             <input type="date" id="qs-date" required />
           </div>
-          <div class="form-group" style="flex: 1; min-width: 160px;">
+          <div class="form-group" style="flex: 1; min-width: 140px;">
             <label>當日總步數</label>
             <input type="number" id="qs-steps" placeholder="例如：10981" min="1" required />
           </div>
-          <button type="submit" class="btn btn-blue" id="qs-btn" style="height: 40px;">🚶 更新步數</button>
+          <button type="submit" class="btn btn-blue" id="qs-btn" style="height: 38px;">🚶 更新步數</button>
           <span id="qs-status" class="status-msg" style="align-self: center;"></span>
         </form>
       </div>
 
-      <!-- 快速手動新增飲食表單 -->
-      <div class="card">
-        <h3 style="margin-top:0; margin-bottom:16px;">✍️ 快速手動新增飲食記錄</h3>
+      <!-- 摺疊式：快速手動新增飲食表單（預設收埋） -->
+      <div id="add-form-card" class="card hidden">
+        <div class="section-header">
+          <h3 style="margin:0;">✍️ 手動新增飲食記錄</h3>
+          <button class="btn btn-outline btn-sm" onclick="toggleAddForm()">收起</button>
+        </div>
         <form id="entry-form" onsubmit="handleFormSubmit(event)">
           <div class="form-grid">
-            <div class="form-group">
-              <label>日期</label>
-              <input type="date" id="f-date" required />
-            </div>
+            <div class="form-group"><label>日期</label><input type="date" id="f-date" required /></div>
             <div class="form-group">
               <label>餐次</label>
               <select id="f-meal">
@@ -120,54 +161,45 @@
                 <option value="飲品">飲品</option>
               </select>
             </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>食物內容</label>
-              <input type="text" id="f-food" placeholder="例如：無糖可樂 1罐 / 烚蛋兩隻" required />
-            </div>
-            <div class="form-group">
-              <label>卡路里 (kcal)</label>
-              <input type="number" id="f-cal" placeholder="0" min="0" />
-            </div>
-            <div class="form-group">
-              <label>蛋白質 (g)</label>
-              <input type="number" id="f-pro" placeholder="0" min="0" step="0.1" />
-            </div>
-            <div class="form-group">
-              <label>碳水 (g)</label>
-              <input type="number" id="f-carb" placeholder="0" min="0" step="0.1" />
-            </div>
-            <div class="form-group">
-              <label>脂肪 (g)</label>
-              <input type="number" id="f-fat" placeholder="0" min="0" step="0.1" />
-            </div>
-            <div class="form-group">
-              <label>花費 (HKD)</label>
-              <input type="number" id="f-cost" placeholder="0" min="0" step="0.1" />
-            </div>
-            <div class="form-group">
-              <label>今日步數（可選）</label>
-              <input type="number" id="f-steps" placeholder="例如：10981" min="0" />
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>備註 (Remarks)</label>
-              <input type="text" id="f-remarks" placeholder="例如：走汁、少飯、7-11買" />
-            </div>
+            <div class="form-group" style="grid-column: span 2;"><label>食物內容</label><input type="text" id="f-food" placeholder="例如：無糖可樂 1罐 / 烚蛋兩隻" required /></div>
+            <div class="form-group"><label>卡路里 (kcal)</label><input type="number" id="f-cal" placeholder="0" min="0" /></div>
+            <div class="form-group"><label>蛋白質 (g)</label><input type="number" id="f-pro" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>碳水 (g)</label><input type="number" id="f-carb" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>脂肪 (g)</label><input type="number" id="f-fat" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>花費 (HKD)</label><input type="number" id="f-cost" placeholder="0" min="0" step="0.1" /></div>
+            <div class="form-group"><label>今日步數（可選）</label><input type="number" id="f-steps" placeholder="例如：10981" min="0" /></div>
+            <div class="form-group" style="grid-column: span 2;"><label>備註 (Remarks)</label><input type="text" id="f-remarks" placeholder="例如：走汁、少飯、7-11買" /></div>
           </div>
-          <div style="margin-top:16px; display:flex; align-items:center;">
+          <div style="margin-top:14px; display:flex; align-items:center;">
             <button type="submit" class="btn" id="submit-btn">➕ 寫入 Google Sheet</button>
             <span id="form-status" class="status-msg"></span>
           </div>
         </form>
       </div>
 
-      <!-- 圖表區 -->
+      <!-- 圖表區（附時間範圍切換） -->
       <div class="card">
+        <div class="section-header">
+          <h3 style="margin:0; font-size:15px;">📈 熱量與餐費趨勢</h3>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-outline btn-sm range-btn" data-days="7" onclick="setChartRange(7)">近 7 日</button>
+            <button class="btn btn-outline btn-sm range-btn active" data-days="14" onclick="setChartRange(14)">近 14 日</button>
+            <button class="btn btn-outline btn-sm range-btn" data-days="30" onclick="setChartRange(30)">近 30 日</button>
+            <button class="btn btn-outline btn-sm range-btn" data-days="0" onclick="setChartRange(0)">全部</button>
+          </div>
+        </div>
         <canvas id="calorieChart" height="95"></canvas>
       </div>
 
-      <!-- 最近飲食記錄 -->
+      <!-- 最近飲食記錄（支援編輯與過濾純步數行） -->
       <div class="card" style="overflow-x:auto;">
-        <h3 style="margin-top:0;">最近飲食明細</h3>
+        <div class="section-header">
+          <h3 style="margin:0; font-size:15px;">🍽️ 最近飲食明細</h3>
+          <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="show-step-rows" style="width:auto;" onchange="renderAll()" />
+            顯示純步數更新行
+          </label>
+        </div>
         <table>
           <thead>
             <tr>
@@ -179,6 +211,7 @@
               <th>花費</th>
               <th>步數</th>
               <th>備註</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody id="log-table-body"></tbody>
@@ -187,23 +220,76 @@
     </div>
   </div>
 
+  <!-- 編輯資料 Modal -->
+  <div id="edit-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="section-header">
+        <h3 style="margin:0;">✏️ 編輯記錄（第 <span id="edit-row-label"></span> 行）</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeEditModal()">✕</button>
+      </div>
+      <form id="edit-form" onsubmit="handleEditSubmit(event)">
+        <input type="hidden" id="e-row" />
+        <div class="form-grid">
+          <div class="form-group"><label>日期</label><input type="date" id="e-date" required /></div>
+          <div class="form-group">
+            <label>餐次</label>
+            <select id="e-meal">
+              <option value="">（留空）</option>
+              <option value="早餐">早餐</option>
+              <option value="午餐">午餐</option>
+              <option value="下午茶">下午茶</option>
+              <option value="晚餐">晚餐</option>
+              <option value="宵夜">宵夜</option>
+              <option value="加餐/小食">加餐/小食</option>
+              <option value="飲品">飲品</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: span 2;"><label>食物內容</label><input type="text" id="e-food" required /></div>
+          <div class="form-group"><label>卡路里 (kcal)</label><input type="number" id="e-cal" min="0" /></div>
+          <div class="form-group"><label>蛋白質 (g)</label><input type="number" id="e-pro" min="0" step="0.1" /></div>
+          <div class="form-group"><label>碳水 (g)</label><input type="number" id="e-carb" min="0" step="0.1" /></div>
+          <div class="form-group"><label>脂肪 (g)</label><input type="number" id="e-fat" min="0" step="0.1" /></div>
+          <div class="form-group"><label>花費 (HKD)</label><input type="number" id="e-cost" min="0" step="0.1" /></div>
+          <div class="form-group"><label>步數</label><input type="number" id="e-steps" min="0" /></div>
+          <div class="form-group" style="grid-column: span 2;"><label>備註</label><input type="text" id="e-remarks" /></div>
+        </div>
+        <div style="margin-top:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <button type="button" class="btn btn-danger btn-sm" id="delete-row-btn" onclick="handleDeleteRow()">🗑️ 清空此行</button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span id="edit-status" class="status-msg"></span>
+            <button type="button" class="btn btn-outline" onclick="closeEditModal()">取消</button>
+            <button type="submit" class="btn" id="save-edit-btn">💾 儲存修改</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const CLIENT_ID = '86281111190-ehfhj4sc4ve16iq3bu16ovbhdbe5ot78.apps.googleusercontent.com';
     const SPREADSHEET_ID = '1WhufyrcY3t-X_7XoqpevEGQhua-ar9AHIxG01Napiho';
-    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwudHI5gZHzZf7WS9F9D4v8ZQ2jWrC-7lhCgEKIv2quXpiJPLZWYe0sYr93bz-QjAg/exec';
-    const SECRET_TOKEN = 'Louis_Fit_2026_SecretKey_9988';
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+    // 升級為讀寫權限，徹底移除公開 HTML 入面嘅 SECRET_TOKEN
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
     const TARGET_CAL = 2000;
     const TARGET_PRO = 140;
     const TARGET_STEPS = 9000;
 
-    const TOKEN_STORAGE_KEY = 'fit_dash_access_token';
-    const EXPIRY_STORAGE_KEY = 'fit_dash_token_expiry';
+    // 改用新 Key，自動令舊唯讀 Token 失效並引導重新授權一次
+    const TOKEN_STORAGE_KEY = 'fit_dash_rw_token';
+    const EXPIRY_STORAGE_KEY = 'fit_dash_rw_expiry';
 
     let tokenClient = null;
     let accessToken = null;
     let chartInstance = null;
+    let allParsedRows = [];
+    let selectedViewDate = '';
+    let chartRangeDays = 14;
+
+    function getTodayISO() {
+      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+      return (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+    }
 
     function parseNum(val) {
       if (val === undefined || val === null || val === '') return 0;
@@ -226,11 +312,17 @@
       document.getElementById('login-screen').classList.remove('hidden');
     }
 
+    function toggleAddForm() {
+      const card = document.getElementById('add-form-card');
+      card.classList.toggle('hidden');
+    }
+
     window.onload = () => {
-      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-      const todayISO = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+      const todayISO = getTodayISO();
+      selectedViewDate = todayISO;
       document.getElementById('f-date').value = todayISO;
       document.getElementById('qs-date').value = todayISO;
+      document.getElementById('view-date-picker').value = todayISO;
 
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
@@ -238,7 +330,6 @@
         callback: (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
             accessToken = tokenResponse.access_token;
-            // 儲存 Token 同過期時間（預早 60 秒作緩衝）
             const expiresInMs = ((tokenResponse.expires_in || 3600) - 60) * 1000;
             localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
             localStorage.setItem(EXPIRY_STORAGE_KEY, String(Date.now() + expiresInMs));
@@ -247,7 +338,6 @@
         },
       });
 
-      // 檢查本地係咪已經有未過期嘅 Token，有就直接入 Dashboard 唔使再登入
       const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
       const savedExpiry = Number(localStorage.getItem(EXPIRY_STORAGE_KEY) || 0);
       if (savedToken && Date.now() < savedExpiry) {
@@ -257,15 +347,30 @@
     };
 
     function handleAuthClick() {
-      // 唔再強制 prompt: 'consent'，過期後一撳即入唔使重覆授權
       tokenClient.requestAccessToken({ prompt: '' });
     }
 
     function handleSignoutClick() {
-      if (accessToken) {
-        google.accounts.oauth2.revoke(accessToken);
-      }
+      if (accessToken) google.accounts.oauth2.revoke(accessToken);
       showLogin();
+    }
+
+    // 透過 Sheets API 直接新增一行
+    async function appendRowToSheet(rowArray) {
+      const range = encodeURIComponent("'Daily Log'!A4:J");
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ values: [rowArray] })
+      });
+      if (res.status === 401) { showLogin(); throw new Error('登入已過期'); }
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data;
     }
 
     async function handleQuickStepsSubmit(e) {
@@ -279,41 +384,23 @@
       status.style.color = '#94a3b8';
       status.innerText = '更新中...';
 
-      const payload = {
-        token: SECRET_TOKEN,
-        date: document.getElementById('qs-date').value,
-        meal: '',
-        food: '🚶 步數更新',
-        cal: 0,
-        pro: 0,
-        carb: 0,
-        fat: 0,
-        cost: 0,
-        steps: stepsVal,
-        remarks: 'Dashboard 快速更新步數'
-      };
-
       try {
-        const res = await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          status.style.color = '#10b981';
-          status.innerText = `✅ 已更新 ${stepsVal.toLocaleString()} 步！`;
-          document.getElementById('qs-steps').value = '';
-          await fetchSheetData();
-          setTimeout(() => { status.innerText = ''; }, 3000);
-        } else {
-          status.style.color = '#ef4444';
-          status.innerText = '更新失敗：' + (result.message || '未知錯誤');
-        }
+        await appendRowToSheet([
+          document.getElementById('qs-date').value,
+          '',
+          '🚶 步數更新',
+          0, 0, 0, 0, 0,
+          stepsVal,
+          'Dashboard 快速更新步數'
+        ]);
+        status.style.color = '#10b981';
+        status.innerText = `✅ 已更新 ${stepsVal.toLocaleString()} 步！`;
+        document.getElementById('qs-steps').value = '';
+        await fetchSheetData();
+        setTimeout(() => { status.innerText = ''; }, 3000);
       } catch (err) {
-        console.error(err);
         status.style.color = '#ef4444';
-        status.innerText = '連線錯誤';
+        status.innerText = '失敗：' + err.message;
       } finally {
         btn.disabled = false;
       }
@@ -327,41 +414,27 @@
       status.style.color = '#94a3b8';
       status.innerText = '正在寫入...';
 
-      const payload = {
-        token: SECRET_TOKEN,
-        date: document.getElementById('f-date').value,
-        meal: document.getElementById('f-meal').value,
-        food: document.getElementById('f-food').value.trim(),
-        cal: document.getElementById('f-cal').value ? Number(document.getElementById('f-cal').value) : 0,
-        pro: document.getElementById('f-pro').value ? Number(document.getElementById('f-pro').value) : 0,
-        carb: document.getElementById('f-carb').value ? Number(document.getElementById('f-carb').value) : 0,
-        fat: document.getElementById('f-fat').value ? Number(document.getElementById('f-fat').value) : 0,
-        cost: document.getElementById('f-cost').value ? Number(document.getElementById('f-cost').value) : 0,
-        steps: document.getElementById('f-steps').value ? Number(document.getElementById('f-steps').value) : '',
-        remarks: document.getElementById('f-remarks').value.trim()
-      };
-
       try {
-        const res = await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          status.style.color = '#10b981';
-          status.innerText = '✅ 已成功寫入！';
-          ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
-          await fetchSheetData();
-          setTimeout(() => { status.innerText = ''; }, 3000);
-        } else {
-          status.style.color = '#ef4444';
-          status.innerText = '寫入失敗：' + (result.message || '未知錯誤');
-        }
+        await appendRowToSheet([
+          document.getElementById('f-date').value,
+          document.getElementById('f-meal').value,
+          document.getElementById('f-food').value.trim(),
+          document.getElementById('f-cal').value ? Number(document.getElementById('f-cal').value) : 0,
+          document.getElementById('f-pro').value ? Number(document.getElementById('f-pro').value) : 0,
+          document.getElementById('f-carb').value ? Number(document.getElementById('f-carb').value) : 0,
+          document.getElementById('f-fat').value ? Number(document.getElementById('f-fat').value) : 0,
+          document.getElementById('f-cost').value ? Number(document.getElementById('f-cost').value) : 0,
+          document.getElementById('f-steps').value ? Number(document.getElementById('f-steps').value) : '',
+          document.getElementById('f-remarks').value.trim()
+        ]);
+        status.style.color = '#10b981';
+        status.innerText = '✅ 已成功寫入！';
+        ['f-food', 'f-cal', 'f-pro', 'f-carb', 'f-fat', 'f-cost', 'f-remarks'].forEach(id => document.getElementById(id).value = '');
+        await fetchSheetData();
+        setTimeout(() => { status.innerText = ''; }, 3000);
       } catch (err) {
-        console.error(err);
         status.style.color = '#ef4444';
-        status.innerText = '連線錯誤，請檢查網路';
+        status.innerText = '寫入失敗：' + err.message;
       } finally {
         btn.disabled = false;
       }
@@ -370,112 +443,183 @@
     async function fetchSheetData() {
       if (!accessToken) return;
       try {
-        const range = encodeURIComponent("'Daily Log'!A4:J500");
+        // 取消 500 行上限，讀盡整張表
+        const range = encodeURIComponent("'Daily Log'!A4:J");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        if (res.status === 401) {
-          // Token 失效時自動退回登入畫面
-          showLogin();
-          return;
-        }
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (res.status === 401) { showLogin(); return; }
         const data = await res.json();
-        if (data.error) {
-          alert('讀取失敗：' + data.error.message);
-          return;
+        if (data.error) { alert('讀取失敗：' + data.error.message); return; }
+
+        const rawRows = data.values || [];
+        allParsedRows = [];
+        rawRows.forEach((r, idx) => {
+          if (r && r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && r[2]) {
+            const food = String(r[2] || '');
+            const cal = parseNum(r[3]);
+            const cost = parseNum(r[7]);
+            allParsedRows.push({
+              rowNum: 4 + idx,
+              date: String(r[0]).trim(),
+              meal: String(r[1] || ''),
+              food: food,
+              cal: cal,
+              pro: parseNum(r[4]),
+              carb: parseNum(r[5]),
+              fat: parseNum(r[6]),
+              cost: cost,
+              steps: Math.round(parseNum(r[8])),
+              remarks: String(r[9] || ''),
+              isStepOnly: food.includes('步數更新') && cal === 0 && cost === 0
+            });
+          }
+        });
+
+        // 如果今日仲未有數據，首次載入預設跳去最新有紀錄嗰日
+        const dates = [...new Set(allParsedRows.map(r => r.date))].sort();
+        if (dates.length > 0 && !dates.includes(selectedViewDate) && selectedViewDate === getTodayISO()) {
+          selectedViewDate = dates[dates.length - 1];
+          document.getElementById('view-date-picker').value = selectedViewDate;
         }
-        renderDashboard(data.values || []);
+
+        renderAll();
         document.getElementById('last-updated').innerText = '最後同步：' + new Date().toLocaleTimeString();
       } catch (err) {
         console.error(err);
       }
     }
 
-    function renderDashboard(rows) {
-      const validRows = rows.filter(r => r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && r[2]);
-      const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-      const todayStr = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+    function shiftViewDate(deltaDays) {
+      const d = new Date(selectedViewDate + 'T00:00:00');
+      d.setDate(d.getDate() + deltaDays);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      selectedViewDate = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 10);
+      document.getElementById('view-date-picker').value = selectedViewDate;
+      renderAll();
+    }
 
-      let todayCal = 0, todayPro = 0, todaySteps = 0, totalCost = 0;
+    function onViewDateChange() {
+      const val = document.getElementById('view-date-picker').value;
+      if (val) { selectedViewDate = val; renderAll(); }
+    }
+
+    function jumpToToday() {
+      selectedViewDate = getTodayISO();
+      document.getElementById('view-date-picker').value = selectedViewDate;
+      renderAll();
+    }
+
+    function setChartRange(days) {
+      chartRangeDays = days;
+      document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.days) === days);
+      });
+      renderAll();
+    }
+
+    function renderAll() {
+      let totalCost = 0;
       const dailyMap = {};
 
-      validRows.forEach(r => {
-        const date = String(r[0]).trim();
-        const cal = parseNum(r[3]);
-        const cost = parseNum(r[7]);
-
-        totalCost += cost;
-        if (!dailyMap[date]) dailyMap[date] = { cal: 0, cost: 0 };
-        dailyMap[date].cal += cal;
-        dailyMap[date].cost += cost;
+      allParsedRows.forEach(r => {
+        totalCost += r.cost;
+        if (!dailyMap[r.date]) dailyMap[r.date] = { cal: 0, cost: 0 };
+        dailyMap[r.date].cal += r.cal;
+        dailyMap[r.date].cost += r.cost;
       });
 
-      const dates = Object.keys(dailyMap).sort();
-      const targetDate = dailyMap[todayStr] ? todayStr : dates[dates.length - 1];
-      if (targetDate) {
-        document.getElementById('target-date-label').innerText = `${targetDate} (目標 ${TARGET_CAL})`;
-        validRows.filter(r => String(r[0]).trim() === targetDate).forEach(r => {
-          todayCal += parseNum(r[3]);
-          todayPro += parseNum(r[4]);
-          const s = Math.round(parseNum(r[8]));
-          if (s > todaySteps) todaySteps = s;
-        });
-      }
+      const allDates = Object.keys(dailyMap).sort();
 
+      // 計算所選日期 KPI
+      let dayCal = 0, dayPro = 0, dayCarb = 0, dayFat = 0, daySteps = 0, dayCost = 0;
+      allParsedRows.filter(r => r.date === selectedViewDate).forEach(r => {
+        dayCal += r.cal;
+        dayPro += r.pro;
+        dayCarb += r.carb;
+        dayFat += r.fat;
+        dayCost += r.cost;
+        if (r.steps > daySteps) daySteps = r.steps;
+      });
+
+      // 熱量 KPI + 剩餘額度
       const kpiCalEl = document.getElementById('kpi-cal');
       const barCalEl = document.getElementById('bar-cal');
-      kpiCalEl.innerText = `${Math.round(todayCal).toLocaleString()} kcal`;
-      kpiCalEl.style.color = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
-      barCalEl.style.width = `${Math.min(100, (todayCal / TARGET_CAL) * 100)}%`;
-      barCalEl.style.background = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
+      kpiCalEl.innerText = `${Math.round(dayCal).toLocaleString()} kcal`;
+      const calDiff = Math.round(TARGET_CAL - dayCal);
+      kpiCalEl.style.color = calDiff < 0 ? 'var(--danger)' : 'var(--accent)';
+      barCalEl.style.width = `${Math.min(100, (dayCal / TARGET_CAL) * 100)}%`;
+      barCalEl.style.background = calDiff < 0 ? 'var(--danger)' : 'var(--accent)';
+      document.getElementById('sub-cal').innerText = calDiff >= 0 ? `剩餘額度：${calDiff.toLocaleString()} kcal` : `⚠️ 超標 ${Math.abs(calDiff).toLocaleString()} kcal`;
+      document.getElementById('sub-cal').style.color = calDiff < 0 ? 'var(--danger)' : 'var(--muted)';
 
-      document.getElementById('kpi-pro').innerText = `${Math.round(todayPro)} g`;
-      document.getElementById('bar-pro').style.width = `${Math.min(100, (todayPro / TARGET_PRO) * 100)}%`;
+      // 蛋白質 KPI + 剩餘額度
+      document.getElementById('kpi-pro').innerText = `${Math.round(dayPro)} g`;
+      document.getElementById('bar-pro').style.width = `${Math.min(100, (dayPro / TARGET_PRO) * 100)}%`;
+      const proDiff = Math.round(TARGET_PRO - dayPro);
+      document.getElementById('sub-pro').innerText = proDiff > 0 ? `差 ${proDiff} g 達標` : `✅ 已達標 (+${Math.abs(proDiff)} g)`;
 
-      document.getElementById('kpi-steps').innerText = todaySteps.toLocaleString();
-      document.getElementById('bar-steps').style.width = `${Math.min(100, (todaySteps / TARGET_STEPS) * 100)}%`;
+      // 步數 KPI + 剩餘額度
+      document.getElementById('kpi-steps').innerText = daySteps.toLocaleString();
+      document.getElementById('bar-steps').style.width = `${Math.min(100, (daySteps / TARGET_STEPS) * 100)}%`;
+      const stepsDiff = TARGET_STEPS - daySteps;
+      document.getElementById('sub-steps').innerText = stepsDiff > 0 ? `差 ${stepsDiff.toLocaleString()} 步達標` : `✅ 已達標 (+${Math.abs(stepsDiff).toLocaleString()} 步)`;
 
-      document.getElementById('kpi-cost').innerText = `$${Math.round(totalCost).toLocaleString()}`;
-      const avgCost = dates.length > 0 ? Math.round(totalCost / dates.length) : 0;
-      document.getElementById('avg-daily-cost').innerText = `日均餐費：$${avgCost}`;
+      // 花費 KPI
+      const avgCost = allDates.length > 0 ? Math.round(totalCost / allDates.length) : 0;
+      document.getElementById('kpi-cost').innerText = `$${Math.round(dayCost).toLocaleString()}`;
+      document.getElementById('sub-cost').innerText = `累積：$${Math.round(totalCost).toLocaleString()}｜日均：$${avgCost}`;
 
+      // 三大營養素比例條（蛋白質 4 kcal/g、碳水 4 kcal/g、脂肪 9 kcal/g）
+      const proKcal = dayPro * 4, carbKcal = dayCarb * 4, fatKcal = dayFat * 9;
+      const macroKcalSum = proKcal + carbKcal + fatKcal;
+      const proPct = macroKcalSum > 0 ? Math.round((proKcal / macroKcalSum) * 100) : 0;
+      const carbPct = macroKcalSum > 0 ? Math.round((carbKcal / macroKcalSum) * 100) : 0;
+      const fatPct = macroKcalSum > 0 ? Math.max(0, 100 - proPct - carbPct) : 0;
+
+      document.getElementById('macro-total-g').innerText = `總克數：${Math.round(dayPro + dayCarb + dayFat)}g`;
+      document.getElementById('m-bar-pro').style.width = `${proPct}%`;
+      document.getElementById('m-bar-carb').style.width = `${carbPct}%`;
+      document.getElementById('m-bar-fat').style.width = `${fatPct}%`;
+      document.getElementById('m-pro-txt').innerText = `${Math.round(dayPro)}g (${proPct}%)`;
+      document.getElementById('m-carb-txt').innerText = `${Math.round(dayCarb)}g (${carbPct}%)`;
+      document.getElementById('m-fat-txt').innerText = `${Math.round(dayFat)}g (${fatPct}%)`;
+
+      // 明細表（支援隱藏純步數更新行）
+      const showSteps = document.getElementById('show-step-rows').checked;
+      const displayRows = allParsedRows.filter(r => showSteps || !r.isStepOnly).slice().reverse().slice(0, 30);
       const tbody = document.getElementById('log-table-body');
-      tbody.innerHTML = validRows.slice().reverse().slice(0, 20).map(r => {
-        const calNum = parseNum(r[3]);
-        const proNum = parseNum(r[4]);
-        const costNum = parseNum(r[7]);
-        const stepsNum = Math.round(parseNum(r[8]));
-        return `
-          <tr>
-            <td>${r[0] || ''}</td>
-            <td>${r[1] || '-'}</td>
-            <td>${r[2] || ''}</td>
-            <td>${calNum.toLocaleString()} kcal</td>
-            <td>${proNum} g</td>
-            <td>$${costNum}</td>
-            <td>${stepsNum > 0 ? stepsNum.toLocaleString() : '-'}</td>
-            <td style="color:var(--muted);">${r[9] || ''}</td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = displayRows.map(r => `
+        <tr>
+          <td style="white-space:nowrap;">${r.date}</td>
+          <td style="white-space:nowrap;">${r.meal || '-'}</td>
+          <td>${r.food}</td>
+          <td style="white-space:nowrap;">${r.cal.toLocaleString()} kcal</td>
+          <td style="white-space:nowrap;">${r.pro} g</td>
+          <td style="white-space:nowrap;">$${r.cost}</td>
+          <td style="white-space:nowrap;">${r.steps > 0 ? r.steps.toLocaleString() : '-'}</td>
+          <td style="color:var(--muted);">${r.remarks}</td>
+          <td><button class="btn btn-outline btn-sm" onclick="openEditModal(${r.rowNum})">✏️</button></td>
+        </tr>
+      `).join('');
 
+      // 圖表（按所選日數截取）
+      const chartDates = chartRangeDays > 0 ? allDates.slice(-chartRangeDays) : allDates;
       const ctx = document.getElementById('calorieChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: dates,
+          labels: chartDates,
           datasets: [
             {
               label: '每日總熱量 (kcal)',
-              data: dates.map(d => dailyMap[d].cal),
-              backgroundColor: dates.map(d => dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.75)' : 'rgba(16, 185, 129, 0.7)'),
+              data: chartDates.map(d => dailyMap[d].cal),
+              backgroundColor: chartDates.map(d => dailyMap[d].cal > TARGET_CAL ? 'rgba(239, 68, 68, 0.75)' : 'rgba(16, 185, 129, 0.7)'),
               yAxisID: 'y'
             },
             {
               label: '2,000 kcal 目標線',
-              data: dates.map(() => TARGET_CAL),
+              data: chartDates.map(() => TARGET_CAL),
               type: 'line',
               borderColor: '#94a3b8',
               borderDash: [5, 5],
@@ -485,7 +629,7 @@
             },
             {
               label: '每日餐費 (HKD)',
-              data: dates.map(d => dailyMap[d].cost),
+              data: chartDates.map(d => dailyMap[d].cost),
               type: 'line',
               borderColor: '#fbbf24',
               backgroundColor: '#fbbf24',
@@ -503,6 +647,108 @@
           plugins: { legend: { labels: { color: '#f8fafc' } } }
         }
       });
+    }
+
+    // 編輯視窗邏輯
+    function openEditModal(rowNum) {
+      const row = allParsedRows.find(r => r.rowNum === rowNum);
+      if (!row) return;
+      document.getElementById('edit-row-label').innerText = rowNum;
+      document.getElementById('e-row').value = rowNum;
+      document.getElementById('e-date').value = row.date;
+      document.getElementById('e-meal').value = row.meal;
+      document.getElementById('e-food').value = row.food;
+      document.getElementById('e-cal').value = row.cal;
+      document.getElementById('e-pro').value = row.pro;
+      document.getElementById('e-carb').value = row.carb;
+      document.getElementById('e-fat').value = row.fat;
+      document.getElementById('e-cost').value = row.cost;
+      document.getElementById('e-steps').value = row.steps > 0 ? row.steps : '';
+      document.getElementById('e-remarks').value = row.remarks;
+      document.getElementById('edit-status').innerText = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    async function handleEditSubmit(e) {
+      e.preventDefault();
+      const rowNum = Number(document.getElementById('e-row').value);
+      const btn = document.getElementById('save-edit-btn');
+      const status = document.getElementById('edit-status');
+      btn.disabled = true;
+      status.style.color = '#94a3b8';
+      status.innerText = '儲存中...';
+
+      const updatedRow = [
+        document.getElementById('e-date').value,
+        document.getElementById('e-meal').value,
+        document.getElementById('e-food').value.trim(),
+        document.getElementById('e-cal').value ? Number(document.getElementById('e-cal').value) : 0,
+        document.getElementById('e-pro').value ? Number(document.getElementById('e-pro').value) : 0,
+        document.getElementById('e-carb').value ? Number(document.getElementById('e-carb').value) : 0,
+        document.getElementById('e-fat').value ? Number(document.getElementById('e-fat').value) : 0,
+        document.getElementById('e-cost').value ? Number(document.getElementById('e-cost').value) : 0,
+        document.getElementById('e-steps').value ? Number(document.getElementById('e-steps').value) : '',
+        document.getElementById('e-remarks').value.trim()
+      ];
+
+      try {
+        const range = encodeURIComponent(`'Daily Log'!A${rowNum}:J${rowNum}`);
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ values: [updatedRow] })
+        });
+        if (res.status === 401) { showLogin(); return; }
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        closeEditModal();
+        await fetchSheetData();
+      } catch (err) {
+        status.style.color = '#ef4444';
+        status.innerText = '儲存失敗：' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function handleDeleteRow() {
+      const rowNum = Number(document.getElementById('e-row').value);
+      if (!confirm(`確定要清空第 ${rowNum} 行嘅記錄嗎？`)) return;
+
+      const btn = document.getElementById('delete-row-btn');
+      const status = document.getElementById('edit-status');
+      btn.disabled = true;
+      status.style.color = '#94a3b8';
+      status.innerText = '清空中...';
+
+      try {
+        const range = encodeURIComponent(`'Daily Log'!A${rowNum}:J${rowNum}`);
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:clear`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (res.status === 401) { showLogin(); return; }
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        closeEditModal();
+        await fetchSheetData();
+      } catch (err) {
+        status.style.color = '#ef4444';
+        status.innerText = '清空失敗：' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
     }
   </script>
 </body>
