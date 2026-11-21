@@ -7,14 +7,15 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --warn: #fbbf24; --danger: #ef4444; --border: #334155; }
+    :root { --bg: #0f172a; --card: #1e293b; --input: #0f172a; --text: #f8fafc; --muted: #94a3b8; --accent: #10b981; --blue: #38bdf8; --warn: #fbbf24; --danger: #ef4444; --border: #334155; }
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
     .container { max-width: 1050px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    .btn { background: var(--accent); color: #052e16; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
+    .btn { background: var(--accent); color: #052e16; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; white-space: nowrap; }
     .btn:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-blue { background: var(--blue); color: #082f49; }
     .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
@@ -22,6 +23,7 @@
     .card-value { font-size: 26px; font-weight: 700; color: var(--accent); }
     .progress-bg { width: 100%; height: 6px; background: var(--input); border-radius: 999px; margin-top: 10px; overflow: hidden; }
     .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+    .quick-steps-bar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 12px; color: var(--muted); }
@@ -32,7 +34,7 @@
     th { color: var(--muted); font-weight: 600; }
     #login-screen { text-align: center; padding: 70px 20px; max-width: 480px; margin: 60px auto; }
     .hidden { display: none !important; }
-    .status-msg { font-size: 13px; margin-left: 12px; color: var(--accent); }
+    .status-msg { font-size: 13px; margin-left: 8px; color: var(--accent); }
   </style>
 </head>
 <body>
@@ -57,7 +59,7 @@
         </div>
       </div>
 
-      <!-- KPI 卡片（含 2,000 kcal / 140g 蛋白質 / 9,000 步目標進度條） -->
+      <!-- KPI 卡片 -->
       <div class="grid" style="margin-bottom:0;">
         <div class="card">
           <div class="card-title"><span>攝取熱量</span><span id="target-date-label">目標 2,000</span></div>
@@ -77,13 +79,29 @@
         <div class="card">
           <div class="card-title"><span>累積餐飲總花費</span><span>HKD</span></div>
           <div class="card-value" style="color:var(--warn);" id="kpi-cost">$0</div>
-          <div style="font-size:12px; color:var(--muted); margin-top:8px;" id="avg-daily-cost">日均花費：$0</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:8px;" id="avg-daily-cost">日均餐費：$0</div>
         </div>
       </div>
 
-      <!-- 快速手動新增表單 -->
+      <!-- 獨立快速更新步數區塊 -->
+      <div class="card" style="padding: 16px 20px;">
+        <form id="quick-steps-form" class="quick-steps-bar" onsubmit="handleQuickStepsSubmit(event)">
+          <div class="form-group" style="flex: 0 0 160px;">
+            <label>🚶 快速更新步數（日期）</label>
+            <input type="date" id="qs-date" required />
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 160px;">
+            <label>當日總步數</label>
+            <input type="number" id="qs-steps" placeholder="例如：10981" min="1" required />
+          </div>
+          <button type="submit" class="btn btn-blue" id="qs-btn" style="height: 40px;">🚶 更新步數</button>
+          <span id="qs-status" class="status-msg" style="align-self: center;"></span>
+        </form>
+      </div>
+
+      <!-- 快速手動新增飲食表單 -->
       <div class="card">
-        <h3 style="margin-top:0; margin-bottom:16px;">✍️ 快速手動新增記錄</h3>
+        <h3 style="margin-top:0; margin-bottom:16px;">✍️ 快速手動新增飲食記錄</h3>
         <form id="entry-form" onsubmit="handleFormSubmit(event)">
           <div class="form-grid">
             <div class="form-group">
@@ -128,7 +146,7 @@
             </div>
             <div class="form-group">
               <label>今日步數（可選）</label>
-              <input type="number" id="f-steps" placeholder="例如：8500" min="0" />
+              <input type="number" id="f-steps" placeholder="例如：10981" min="0" />
             </div>
             <div class="form-group" style="grid-column: span 2;">
               <label>備註 (Remarks)</label>
@@ -184,9 +202,18 @@
     let accessToken = null;
     let chartInstance = null;
 
+    function parseNum(val) {
+      if (val === undefined || val === null || val === '') return 0;
+      const cleaned = String(val).replace(/[^0-9.-]+/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
     window.onload = () => {
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-      document.getElementById('f-date').value = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+      const todayISO = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
+      document.getElementById('f-date').value = todayISO;
+      document.getElementById('qs-date').value = todayISO;
 
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
@@ -213,6 +240,58 @@
       }
       document.getElementById('dashboard').classList.add('hidden');
       document.getElementById('login-screen').classList.remove('hidden');
+    }
+
+    // 獨立快速更新步數
+    async function handleQuickStepsSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('qs-btn');
+      const status = document.getElementById('qs-status');
+      const stepsVal = Number(document.getElementById('qs-steps').value);
+      if (!stepsVal || stepsVal <= 0) return;
+
+      btn.disabled = true;
+      status.style.color = '#94a3b8';
+      status.innerText = '更新中...';
+
+      const payload = {
+        token: SECRET_TOKEN,
+        date: document.getElementById('qs-date').value,
+        meal: '',
+        food: '🚶 步數更新',
+        cal: 0,
+        pro: 0,
+        carb: 0,
+        fat: 0,
+        cost: 0,
+        steps: stepsVal,
+        remarks: 'Dashboard 快速更新步數'
+      };
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          status.style.color = '#10b981';
+          status.innerText = `✅ 已更新 ${stepsVal.toLocaleString()} 步！`;
+          document.getElementById('qs-steps').value = '';
+          await fetchSheetData();
+          setTimeout(() => { status.innerText = ''; }, 3000);
+        } else {
+          status.style.color = '#ef4444';
+          status.innerText = '更新失敗：' + (result.message || '未知錯誤');
+        }
+      } catch (err) {
+        console.error(err);
+        status.style.color = '#ef4444';
+        status.innerText = '連線錯誤';
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     async function handleFormSubmit(e) {
@@ -266,7 +345,7 @@
     async function fetchSheetData() {
       if (!accessToken) return;
       try {
-        const range = encodeURIComponent("'Daily Log'!A2:J500");
+        const range = encodeURIComponent("'Daily Log'!A4:J500");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${accessToken}` }
@@ -284,7 +363,7 @@
     }
 
     function renderDashboard(rows) {
-      const validRows = rows.filter(r => r[0] && r[2]);
+      const validRows = rows.filter(r => r[0] && /^\d{4}-\d{2}-\d{2}/.test(String(r[0]).trim()) && r[2]);
       const tzOffset = (new Date()).getTimezoneOffset() * 60000;
       const todayStr = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
 
@@ -292,11 +371,9 @@
       const dailyMap = {};
 
       validRows.forEach(r => {
-        const date = r[0];
-        const cal = parseFloat(r[3]) || 0;
-        const pro = parseFloat(r[4]) || 0;
-        const cost = parseFloat(String(r[7] || '0').replace(/[^0-9.-]+/g, '')) || 0;
-        const steps = parseInt(String(r[8] || '0').replace(/[^0-9]+/g, '')) || 0;
+        const date = String(r[0]).trim();
+        const cal = parseNum(r[3]);
+        const cost = parseNum(r[7]);
 
         totalCost += cost;
         if (!dailyMap[date]) dailyMap[date] = { cal: 0, cost: 0 };
@@ -308,48 +385,50 @@
       const targetDate = dailyMap[todayStr] ? todayStr : dates[dates.length - 1];
       if (targetDate) {
         document.getElementById('target-date-label').innerText = `${targetDate} (目標 ${TARGET_CAL})`;
-        validRows.filter(r => r[0] === targetDate).forEach(r => {
-          todayCal += parseFloat(r[3]) || 0;
-          todayPro += parseFloat(r[4]) || 0;
-          const s = parseInt(String(r[8] || '0').replace(/[^0-9]+/g, '')) || 0;
+        validRows.filter(r => String(r[0]).trim() === targetDate).forEach(r => {
+          todayCal += parseNum(r[3]);
+          todayPro += parseNum(r[4]);
+          const s = Math.round(parseNum(r[8]));
           if (s > todaySteps) todaySteps = s;
         });
       }
 
-      // 更新熱量卡片及進度條
       const kpiCalEl = document.getElementById('kpi-cal');
       const barCalEl = document.getElementById('bar-cal');
-      kpiCalEl.innerText = `${Math.round(todayCal)} kcal`;
+      kpiCalEl.innerText = `${Math.round(todayCal).toLocaleString()} kcal`;
       kpiCalEl.style.color = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
       barCalEl.style.width = `${Math.min(100, (todayCal / TARGET_CAL) * 100)}%`;
       barCalEl.style.background = todayCal > TARGET_CAL ? 'var(--danger)' : 'var(--accent)';
 
-      // 更新蛋白質進度條
       document.getElementById('kpi-pro').innerText = `${Math.round(todayPro)} g`;
       document.getElementById('bar-pro').style.width = `${Math.min(100, (todayPro / TARGET_PRO) * 100)}%`;
 
-      // 更新步數進度條
       document.getElementById('kpi-steps').innerText = todaySteps.toLocaleString();
       document.getElementById('bar-steps').style.width = `${Math.min(100, (todaySteps / TARGET_STEPS) * 100)}%`;
 
-      // 更新花費
-      document.getElementById('kpi-cost').innerText = `$${Math.round(totalCost)}`;
+      document.getElementById('kpi-cost').innerText = `$${Math.round(totalCost).toLocaleString()}`;
       const avgCost = dates.length > 0 ? Math.round(totalCost / dates.length) : 0;
       document.getElementById('avg-daily-cost').innerText = `日均餐費：$${avgCost}`;
 
       const tbody = document.getElementById('log-table-body');
-      tbody.innerHTML = validRows.slice().reverse().slice(0, 20).map(r => `
-        <tr>
-          <td>${r[0] || ''}</td>
-          <td>${r[1] || ''}</td>
-          <td>${r[2] || ''}</td>
-          <td>${r[3] || 0} kcal</td>
-          <td>${r[4] || 0} g</td>
-          <td>$${r[7] || 0}</td>
-          <td>${r[8] ? Number(r[8]).toLocaleString() : '-'}</td>
-          <td style="color:var(--muted);">${r[9] || ''}</td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = validRows.slice().reverse().slice(0, 20).map(r => {
+        const calNum = parseNum(r[3]);
+        const proNum = parseNum(r[4]);
+        const costNum = parseNum(r[7]);
+        const stepsNum = Math.round(parseNum(r[8]));
+        return `
+          <tr>
+            <td>${r[0] || ''}</td>
+            <td>${r[1] || '-'}</td>
+            <td>${r[2] || ''}</td>
+            <td>${calNum.toLocaleString()} kcal</td>
+            <td>${proNum} g</td>
+            <td>$${costNum}</td>
+            <td>${stepsNum > 0 ? stepsNum.toLocaleString() : '-'}</td>
+            <td style="color:var(--muted);">${r[9] || ''}</td>
+          </tr>
+        `;
+      }).join('');
 
       const ctx = document.getElementById('calorieChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
